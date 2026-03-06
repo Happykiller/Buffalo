@@ -1,0 +1,49 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: buffalo-mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+      - ./docker/mongo-init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - buffalo-net
+
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: ../../docker/backend.Dockerfile
+    container_name: buffalo-backend
+    ports:
+      - '3000:3000'
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/buffalo
+    volumes:
+      - ./apps/backend/src:/app/src
+    depends_on:
+      - mongo
+    networks:
+      - buffalo-net
+
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: ../../docker/frontend.Dockerfile
+    container_name: buffalo-frontend
+    ports:
+      - '5173:5173'
+    volumes:
+      - ./apps/frontend/src:/app/src
+      - ./apps/frontend/index.html:/app/index.html
+    depends_on:
+      - backend
+    networks:
+      - buffalo-net
+
+volumes:
+  mongo-data:
+
+networks:
+  buffalo-net:
+    driver: bridge

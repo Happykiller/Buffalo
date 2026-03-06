@@ -1,0 +1,61 @@
+import { useState } from 'react';
+
+interface User {
+    id: string;
+    displayName: string;
+}
+
+interface IdentifyFormProps {
+    onIdentified: (user: User) => void;
+}
+
+export default function IdentifyForm({ onIdentified }: IdentifyFormProps) {
+    const [name, setName] = useState('');
+
+    const handleSubmit = (displayName: string) => {
+        const trimmed = displayName.trim();
+        if (!trimmed) return;
+
+        const user = { id: `local_${Date.now()}`, displayName: trimmed };
+        localStorage.setItem('buffalo_user', JSON.stringify(user));
+        onIdentified(user);
+    };
+
+    return (
+        <div className="identify-container">
+            <div className="identify-card">
+                <div className="identify-emoji">🐃</div>
+                <h1 className="identify-title">Qui es-tu ?</h1>
+                <p className="identify-subtitle">
+                    Identifie-toi pour soumettre tes demandes au Bureau des Miracles Techniques
+                </p>
+
+
+
+                <form
+                    className="identify-form"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        handleSubmit(name);
+                    }}
+                >
+                    <input
+                        type="text"
+                        className="identify-input"
+                        placeholder="Ton nom, pseudonyme, alias secret…"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        autoFocus
+                    />
+                    <button
+                        type="submit"
+                        className="identify-button"
+                        disabled={!name.trim()}
+                    >
+                        🚀 Entrer dans le Bureau
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+}
