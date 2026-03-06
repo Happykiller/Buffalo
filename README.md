@@ -1,65 +1,158 @@
-# 🐃 Buffalo — Bureau des Demandes Absurdes
+# Buffalo - Bureau des Demandes Absurdes
 
-Application interne ludique permettant à vos collègues de soumettre des demandes techniques via une interface fun et thématique, et au lead tech de gérer une todo list simple.
+Application interne ludique permettant de soumettre des demandes techniques cote utilisateur, et de les suivre/traiter cote admin.
 
-![Stack](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)
-![Stack](https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white)
-![Stack](https://img.shields.io/badge/GraphQL-E10098?style=flat&logo=graphql&logoColor=white)
-![Stack](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
-![Stack](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
-
-## 🚀 Démarrage
+## Demarrage rapide (Docker)
 
 ```bash
 docker compose up --build
 ```
 
-C'est tout. ☕
-
-## 🌐 URLs
+## URLs
 
 | Service | URL |
-|---------|-----|
-| 👤 Interface utilisateur | http://localhost:5173/user |
-| 🛠️ Interface admin | http://localhost:5173/admin |
-| 📊 GraphQL Playground | http://localhost:3000/graphql |
+|---|---|
+| Interface utilisateur | http://localhost:5173/user |
+| Interface admin | http://localhost:5173/admin |
+| GraphQL Playground | http://localhost:3000/graphql |
 
-## 🎭 Fonctionnement
+## Fonctionnalites
 
-### Côté Utilisateur (`/user`)
+### Cote utilisateur (`/user`)
 
-1. L'utilisateur s'identifie (nom libre ou utilisateur existant)
-2. Un **thème aléatoire** est affiché parmi 5 thèmes absurdes :
-   - 🦩 **Rose Absurde** — surréalisme et flamants roses
-   - 😈 **Noir Démoniaque** — pactes diaboliques
-   - 📊 **Gris Corporate** — formalisme ironique
-   - 🔮 **Contrat Mystique** — magie et parchemins
-   - 👑 **Support Premium Ironique** — faux VIP
-3. L'utilisateur rédige sa demande avec une criticité
-4. Message de confirmation fun → possibilité d'enchaîner
+- Identification locale (stockage navigateur)
+- Theme aleatoire a chaque session/nouvelle demande
+- Creation d'une demande avec criticite
+- `message` optionnel
+- Ecran de succes avec numero de demande (`requestNumber`)
 
-### Côté Admin (`/admin`)
+### Cote admin (`/admin`)
 
-- Vue de toutes les demandes (polling auto)
-- Filtres par statut et criticité
-- Recherche libre
-- Bouton "marquer comme traité"
+- Acces autorise uniquement depuis localhost
+- Liste des demandes triees de la plus recente a la plus ancienne
+- Pagination cote serveur
+- Filtres (statut, criticite) + recherche
+- Action "Marquer comme traite"
+- Mise a jour temps reel via GraphQL Subscriptions (`requestCreated`, `requestUpdated`)
+- Notifications navigateur a l'arrivee d'une nouvelle demande (si permission accordee)
 
-## 🏗️ Architecture
+## Variables d'environnement (frontend)
+
+Dans `apps/frontend/.env.local`:
+
+```env
+# Dev local hors Docker (sinon fallback: http://backend:3000)
+VITE_GRAPHQL_PROXY_TARGET=http://localhost:3000
+
+# Nom de l'app affiche dans l'UI (fallback: Buffalo)
+VITE_APP_NAME=OnlyFab
+```
+
+## Variables d'environnement (backend)
+
+- `MONGO_URI` (optionnel) - fallback: `mongodb://localhost:27017/buffalo`
+
+## API GraphQL
+
+### Query: demandes paginees
+
+```graphql
+query GetRequests($page: Int, $pageSize: Int, $status: RequestStatus, $criticality: Criticality, $search: String) {
+  requests(page: $page, pageSize: $pageSize, status: $status, criticality: $criticality, search: $search) {
+    items {
+      id
+      requestNumber
+      userDisplayName
+      message
+      criticality
+      status
+      createdAt
+      processedAt
+    }
+    total
+    page
+    pageSize
+    totalPages
+  }
+}
+```
+
+### Mutation: creation de demande (`message` optionnel)
+
+```graphql
+mutation CreateRequest($input: CreateRequestInput!) {
+  createRequest(input: $input) {
+    id
+    requestNumber
+    status
+  }
+}
+```
+
+Exemple de variables:
+
+```json
+{
+  "input": {
+    "userDisplayName": "John",
+    "message": null,
+    "criticality": "HIGH",
+    "themeKey": "noir-demoniaque"
+  }
+}
+```
+
+### Mutation: marquer traite
+
+```graphql
+mutation MarkRequestAsDone($requestId: String!) {
+  markRequestAsDone(requestId: $requestId) {
+    id
+    requestNumber
+    status
+    processedAt
+  }
+}
+```
+
+### Subscriptions (admin)
+
+```graphql
+subscription {
+  requestCreated {
+    id
+    requestNumber
+    userDisplayName
+    status
+  }
+}
+```
+
+```graphql
+subscription {
+  requestUpdated {
+    id
+    requestNumber
+    status
+    processedAt
+  }
+}
+```
+
+## Architecture
 
 ```
 apps/
-  backend/          # NestJS + GraphQL code-first
-    src/
-      modules/
-        user/       # domaine User (hexa pragmatique)
-        request/    # domaine Request (hexa pragmatique)
-  frontend/         # React + Vite + TypeScript
-    src/
-      components/   # IdentifyForm, RequestForm, RequestList
-      pages/        # UserPage, AdminPage
-      graphql/      # queries & mutations
-      themes.ts     # 5 thèmes ludiques
+  backend/          # NestJS + GraphQL code-first + Mongoose
+    src/modules/request/
+      domain/
+      application/
+      infrastructure/
+      interfaces/graphql/
+  frontend/         # React + Vite + TypeScript + Apollo Client
+    src/components/
+    src/pages/
+    src/graphql/
 
 docker/
   backend.Dockerfile
@@ -68,45 +161,9 @@ docker/
 docker-compose.yml
 ```
 
-Chaque domaine backend suit l'architecture hexagonale :
+## Notes implementation
 
-```
-domain/          → entités, enums, ports
-application/     → use cases, DTOs
-infrastructure/  → mongoose schemas, adapters
-interfaces/      → graphql resolvers, types, inputs
-```
-
-## 🔧 Stack technique
-
-- **Frontend** : React 18, TypeScript, Vite, Apollo Client, React Router v6
-- **Backend** : NestJS 10, GraphQL (code-first), Mongoose
-- **BDD** : MongoDB 7
-- **Infra** : Docker Compose, hot reload dev
-
-## 📦 Seed
-
-Le seed MongoDB crée automatiquement :
-- 4 utilisateurs : Faro, Alice, Bob, Charlie
-- 3 demandes exemples avec criticités variées
-
-## 📝 API GraphQL
-
-### Queries
-
-```graphql
-query { users { id displayName } }
-query { requests(status: OPEN, criticality: HIGH) { id message userDisplayName } }
-```
-
-### Mutations
-
-```graphql
-mutation { identifyUser(input: { displayName: "John" }) { id displayName } }
-mutation { createRequest(input: { userId: "...", userDisplayName: "John", message: "Fix prod", criticality: HIGH, themeKey: "noir-demoniaque" }) { id } }
-mutation { markRequestAsDone(requestId: "...") { id status } }
-```
-
----
-
-*Built with 🐃 and absurdity.*
+- Le numero de demande est genere de facon atomique via un compteur Mongo (`request-counters`).
+- Les subscriptions utilisent `graphql-ws`.
+- Le client Apollo utilise un split HTTP/WS.
+- En multi-instance backend, remplacer le PubSub memoire par un broker (ex: Redis) pour propager les events.

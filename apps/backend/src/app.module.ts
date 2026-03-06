@@ -14,6 +14,12 @@ import { RequestModule } from './modules/request/request.module';
             autoSchemaFile: true,
             playground: true,
             sortSchema: true,
+            subscriptions: {
+                'graphql-ws': true,
+            },
+            context: ({ req, extra }: { req?: unknown; extra?: { request?: unknown } }) => ({
+                req: req ?? extra?.request,
+            }),
         }),
         RequestModule,
     ],

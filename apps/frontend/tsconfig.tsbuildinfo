@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/config.ts","./src/main.tsx","./src/themes.ts","./src/vite-env.d.ts","./src/components/identifyform.tsx","./src/components/requestform.tsx","./src/components/requestlist.tsx","./src/graphql/mutations.ts","./src/graphql/queries.ts","./src/graphql/subscriptions.ts","./src/pages/adminpage.tsx","./src/pages/userpage.tsx"],"version":"5.9.3"}

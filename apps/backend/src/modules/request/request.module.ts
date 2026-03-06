@@ -9,6 +9,8 @@ import { GetRequestsUseCase } from './application/get-requests.usecase';
 import { MarkRequestDoneUseCase } from './application/mark-request-done.usecase';
 import { RequestResolver } from './interfaces/graphql/request.resolver';
 import { LocalhostAdminGuard } from './interfaces/graphql/localhost-admin.guard';
+import { PubSub } from 'graphql-subscriptions';
+import { REQUEST_PUB_SUB } from './interfaces/graphql/request-events';
 
 @Module({
     imports: [
@@ -19,6 +21,7 @@ import { LocalhostAdminGuard } from './interfaces/graphql/localhost-admin.guard'
     ],
     providers: [
         { provide: REQUEST_REPOSITORY, useClass: RequestRepositoryAdapter },
+        { provide: REQUEST_PUB_SUB, useFactory: () => new PubSub() },
         CreateRequestUseCase,
         GetRequestsUseCase,
         MarkRequestDoneUseCase,

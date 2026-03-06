@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { useQuery } from '@apollo/client';
+import { useEffect, useState } from 'react';
+import { useQuery, useSubscription } from '@apollo/client';
 import { GET_REQUESTS } from '../graphql/queries';
+import { REQUEST_CREATED_SUBSCRIPTION, REQUEST_UPDATED_SUBSCRIPTION } from '../graphql/subscriptions';
 import RequestList from '../components/RequestList';
 import { APP_NAME } from '../config';
 
@@ -26,8 +27,6 @@ export default function AdminPage() {
     const [criticalityFilter, setCriticalityFilter] = useState<string>('');
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
-    const isNotificationBootstrappedRef = useRef(false);
-    const seenRequestIdsRef = useRef<Set<string>>(new Set());
 
     useEffect(() => {
         setPage(1);
@@ -41,55 +40,37 @@ export default function AdminPage() {
     if (criticalityFilter) variables.criticality = criticalityFilter;
     if (search.trim()) variables.search = search.trim();
 
-    const { data, loading, error } = useQuery(GET_REQUESTS, {
+    const { data, loading, error, refetch } = useQuery(GET_REQUESTS, {
         variables,
         skip: !isLocalhost,
-        pollInterval: 5000,
     });
 
-    const notificationFeedQuery = useQuery(GET_REQUESTS, {
-        variables: { page: 1, pageSize: 10 },
-        skip: !isLocalhost || !supportsNotifications,
-        pollInterval: 5000,
+    useSubscription(REQUEST_CREATED_SUBSCRIPTION, {
+        skip: !isLocalhost,
+        onData: ({ data: subscriptionData }) => {
+            const created = subscriptionData.data?.requestCreated as AdminRequestItem | undefined;
+            if (!created) return;
+            refetch(variables);
+
+            if (supportsNotifications && notificationPermission === 'granted') {
+                const number = created.requestNumber ? `#${created.requestNumber}` : created.id;
+                const body = `Nouvelle demande ${number} par ${created.userDisplayName}`;
+                new Notification(`${APP_NAME} Admin`, { body });
+            }
+        },
+    });
+
+    useSubscription(REQUEST_UPDATED_SUBSCRIPTION, {
+        skip: !isLocalhost,
+        onData: () => {
+            refetch(variables);
+        },
     });
 
     useEffect(() => {
         if (!supportsNotifications) return;
         setNotificationPermission(Notification.permission);
     }, [supportsNotifications]);
-
-    useEffect(() => {
-        if (!supportsNotifications || notificationPermission !== 'granted') {
-            return;
-        }
-
-        const feedItems = (notificationFeedQuery.data?.requests?.items ?? []) as AdminRequestItem[];
-        if (feedItems.length === 0) {
-            return;
-        }
-
-        if (!isNotificationBootstrappedRef.current) {
-            feedItems.forEach((item) => seenRequestIdsRef.current.add(item.id));
-            isNotificationBootstrappedRef.current = true;
-            return;
-        }
-
-        const newItems = feedItems.filter((item) => !seenRequestIdsRef.current.has(item.id));
-        if (newItems.length === 0) {
-            return;
-        }
-
-        newItems
-            .slice()
-            .reverse()
-            .forEach((item) => {
-                const number = item.requestNumber ? `#${item.requestNumber}` : item.id;
-                const body = `Nouvelle demande ${number} par ${item.userDisplayName}`;
-                new Notification(`${APP_NAME} Admin`, { body });
-            });
-
-        newItems.forEach((item) => seenRequestIdsRef.current.add(item.id));
-    }, [APP_NAME, notificationFeedQuery.data, notificationPermission, supportsNotifications]);
 
     const enableNotifications = async () => {
         if (!supportsNotifications) return;
