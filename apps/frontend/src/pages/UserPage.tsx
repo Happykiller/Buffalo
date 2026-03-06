@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import IdentifyForm from '../components/IdentifyForm';
 import RequestForm from '../components/RequestForm';
 import { getRandomTheme, type Theme } from '../themes';
+import { USER_STORAGE_KEY } from '../config';
 
 interface User {
     id: string;
@@ -13,12 +14,12 @@ export default function UserPage() {
     const [theme, setTheme] = useState<Theme>(getRandomTheme());
 
     useEffect(() => {
-        const stored = localStorage.getItem('buffalo_user');
+        const stored = localStorage.getItem(USER_STORAGE_KEY);
         if (stored) {
             try {
                 setUser(JSON.parse(stored));
             } catch {
-                localStorage.removeItem('buffalo_user');
+                localStorage.removeItem(USER_STORAGE_KEY);
             }
         }
     }, []);

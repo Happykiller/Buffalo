@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { APP_NAME, USER_STORAGE_KEY } from '../config';
 
 interface User {
     id: string;
@@ -17,20 +18,19 @@ export default function IdentifyForm({ onIdentified }: IdentifyFormProps) {
         if (!trimmed) return;
 
         const user = { id: `local_${Date.now()}`, displayName: trimmed };
-        localStorage.setItem('buffalo_user', JSON.stringify(user));
+        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
         onIdentified(user);
     };
 
     return (
         <div className="identify-container">
             <div className="identify-card">
+                <p className="identify-app-name">{APP_NAME}</p>
                 <div className="identify-emoji">🐃</div>
                 <h1 className="identify-title">Qui es-tu ?</h1>
                 <p className="identify-subtitle">
                     Identifie-toi pour soumettre tes demandes au Bureau des Miracles Techniques
                 </p>
-
-
 
                 <form
                     className="identify-form"
@@ -42,7 +42,7 @@ export default function IdentifyForm({ onIdentified }: IdentifyFormProps) {
                     <input
                         type="text"
                         className="identify-input"
-                        placeholder="Ton nom, pseudonyme, alias secret…"
+                        placeholder="Ton nom, pseudonyme, alias secret..."
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         autoFocus

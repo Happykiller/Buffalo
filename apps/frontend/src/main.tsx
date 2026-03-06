@@ -4,6 +4,14 @@ import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './App.css';
+import { APP_NAME } from './config';
+
+document.title = `🐃 ${APP_NAME} — Bureau des Demandes`;
+
+const metaDescription = document.querySelector('meta[name="description"]');
+if (metaDescription) {
+    metaDescription.setAttribute('content', `${APP_NAME} — Le bureau des demandes absurdes`);
+}
 
 const client = new ApolloClient({
     uri: '/graphql',

@@ -8,6 +8,7 @@ import { CreateRequestUseCase } from './application/create-request.usecase';
 import { GetRequestsUseCase } from './application/get-requests.usecase';
 import { MarkRequestDoneUseCase } from './application/mark-request-done.usecase';
 import { RequestResolver } from './interfaces/graphql/request.resolver';
+import { LocalhostAdminGuard } from './interfaces/graphql/localhost-admin.guard';
 
 @Module({
     imports: [
@@ -22,6 +23,7 @@ import { RequestResolver } from './interfaces/graphql/request.resolver';
         GetRequestsUseCase,
         MarkRequestDoneUseCase,
         RequestResolver,
+        LocalhostAdminGuard,
     ],
 })
 export class RequestModule { }

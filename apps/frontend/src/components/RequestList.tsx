@@ -16,6 +16,7 @@ interface RequestItem {
 
 interface RequestListProps {
     requests: RequestItem[];
+    queryVariables: Record<string, string | number | undefined>;
 }
 
 const criticalityConfig: Record<string, { label: string; color: string }> = {
@@ -35,9 +36,9 @@ function formatDate(dateStr: string): string {
     });
 }
 
-export default function RequestList({ requests }: RequestListProps) {
+export default function RequestList({ requests, queryVariables }: RequestListProps) {
     const [markAsDone, { loading }] = useMutation(MARK_REQUEST_AS_DONE, {
-        refetchQueries: [{ query: GET_REQUESTS }],
+        refetchQueries: [{ query: GET_REQUESTS, variables: queryVariables }],
     });
 
     if (requests.length === 0) {
@@ -54,45 +55,50 @@ export default function RequestList({ requests }: RequestListProps) {
             {requests.map((req) => {
                 const crit = criticalityConfig[req.criticality] || criticalityConfig.MEDIUM;
                 const isDone = req.status === 'DONE';
+                const requestNumberLabel = req.requestNumber ? ` • #${req.requestNumber}` : '';
 
                 return (
-                    <div
-                        key={req.id}
-                        className={`request-item ${isDone ? 'done' : ''}`}
-                    >
+                    <div key={req.id} className={`request-item ${isDone ? 'done' : ''}`}>
                         <div className="request-item-header">
-                            <span className="request-author">👤 {req.userDisplayName}</span>
-                            <span
-                                className="request-criticality"
-                                style={{ background: crit.color + '22', color: crit.color, borderColor: crit.color }}
-                            >
-                                {crit.label}
-                            </span>
+                            <span className="request-author">👤 {req.userDisplayName}{requestNumberLabel}</span>
                         </div>
 
-                        <p className="request-message">{req.message || '(Sans description)'}</p>
+                        <div className="request-item-main">
+                            <div className="request-item-content">
+                                <p className="request-message">{req.message || '(Sans description)'}</p>
 
-                        <div className="request-item-footer">
-                            <span className="request-date">📅 {formatDate(req.createdAt)}</span>
-                            <span className={`request-status ${isDone ? 'status-done' : 'status-open'}`}>
-                                {isDone ? '✅ Traité' : '🔵 Ouvert'}
-                            </span>
-                            {req.processedAt && (
-                                <span className="request-processed">
-                                    Traité le {formatDate(req.processedAt)}
+                                <div className="request-item-footer">
+                                    <span className="request-date">📅 {formatDate(req.createdAt)}</span>
+                                    <span className={`request-status ${isDone ? 'status-done' : 'status-open'}`}>
+                                        {isDone ? '✅ Traité' : '🔵 Ouvert'}
+                                    </span>
+                                    {req.processedAt && (
+                                        <span className="request-processed">
+                                            Traité le {formatDate(req.processedAt)}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="request-item-side">
+                                <span
+                                    className="request-criticality"
+                                    style={{ background: `${crit.color}22`, color: crit.color, borderColor: crit.color }}
+                                >
+                                    {crit.label}
                                 </span>
-                            )}
-                        </div>
 
-                        {!isDone && (
-                            <button
-                                className="mark-done-btn"
-                                onClick={() => markAsDone({ variables: { requestId: req.id } })}
-                                disabled={loading}
-                            >
-                                ✅ Marquer comme traité
-                            </button>
-                        )}
+                                {!isDone && (
+                                    <button
+                                        className="mark-done-btn"
+                                        onClick={() => markAsDone({ variables: { requestId: req.id } })}
+                                        disabled={loading}
+                                    >
+                                        ✅ Marquer comme traité
+                                    </button>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 );
             })}

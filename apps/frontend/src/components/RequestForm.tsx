@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import { CREATE_REQUEST } from '../graphql/mutations';
 import { type Theme } from '../themes';
+import { USER_STORAGE_KEY } from '../config';
 
 interface User {
     id: string;
@@ -183,7 +184,7 @@ export default function RequestForm({ user, theme, onNewTheme }: RequestFormProp
                 <button
                     className="logout-btn"
                     onClick={() => {
-                        localStorage.removeItem('buffalo_user');
+                        localStorage.removeItem(USER_STORAGE_KEY);
                         window.location.reload();
                     }}
                 >

@@ -1,4 +1,5 @@
 import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { UseGuards } from '@nestjs/common';
 import { RequestType } from './request.type';
 import { RequestPageType } from './request-page.type';
 import { CreateRequestInput } from './create-request.input';
@@ -7,6 +8,7 @@ import { RequestStatus } from '../../domain/request-status.enum';
 import { CreateRequestUseCase } from '../../application/create-request.usecase';
 import { GetRequestsUseCase } from '../../application/get-requests.usecase';
 import { MarkRequestDoneUseCase } from '../../application/mark-request-done.usecase';
+import { LocalhostAdminGuard } from './localhost-admin.guard';
 
 @Resolver(() => RequestType)
 export class RequestResolver {
@@ -17,6 +19,7 @@ export class RequestResolver {
     ) { }
 
     @Query(() => RequestPageType, { name: 'requests' })
+    @UseGuards(LocalhostAdminGuard)
     async getRequests(
         @Args('status', { type: () => RequestStatus, nullable: true }) status?: RequestStatus,
         @Args('criticality', { type: () => Criticality, nullable: true }) criticality?: Criticality,
@@ -40,6 +43,7 @@ export class RequestResolver {
     }
 
     @Mutation(() => RequestType)
+    @UseGuards(LocalhostAdminGuard)
     async markRequestAsDone(
         @Args('requestId') requestId: string,
     ): Promise<RequestType> {
