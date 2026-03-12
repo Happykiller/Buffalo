@@ -30,6 +30,7 @@ function formatSubmissionError(error: unknown): string {
 }
 
 export default function RequestForm({ user, theme, onNewTheme }: RequestFormProps) {
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [criticality, setCriticality] = useState('MEDIUM');
     const [confirmation, setConfirmation] = useState<string | null>(null);
@@ -75,11 +76,34 @@ export default function RequestForm({ user, theme, onNewTheme }: RequestFormProp
         <div
             className="request-container"
             style={{
+                position: 'relative',
                 background: theme.bgGradient,
                 color: theme.textColor,
                 minHeight: '100vh',
             }}
         >
+            <div className="profile-menu-container">
+                <button 
+                    className="profile-menu-btn" 
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                >
+                    👤 {user.displayName}
+                </button>
+                {isProfileOpen && (
+                    <div className="profile-dropdown">
+                        <button
+                            className="profile-dropdown-btn"
+                            onClick={() => {
+                                localStorage.removeItem(USER_STORAGE_KEY);
+                                window.location.reload();
+                            }}
+                        >
+                            🚪 Changer d'identité
+                        </button>
+                    </div>
+                )}
+            </div>
+
             <div
                 className="request-card"
                 style={{
@@ -93,9 +117,6 @@ export default function RequestForm({ user, theme, onNewTheme }: RequestFormProp
                         {theme.name}
                     </h1>
                     <p className="request-tagline">{theme.tagline}</p>
-                    <p className="request-user-badge" style={{ borderColor: theme.accentColor }}>
-                        Connecté en tant que <strong>{user.displayName}</strong>
-                    </p>
                 </div>
 
                 {confirmation ? (
@@ -180,16 +201,6 @@ export default function RequestForm({ user, theme, onNewTheme }: RequestFormProp
                         </div>
                     </form>
                 )}
-
-                <button
-                    className="logout-btn"
-                    onClick={() => {
-                        localStorage.removeItem(USER_STORAGE_KEY);
-                        window.location.reload();
-                    }}
-                >
-                    🚪 Changer d'identité
-                </button>
             </div>
         </div>
     );

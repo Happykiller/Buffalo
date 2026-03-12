@@ -10,6 +10,7 @@ export interface RequestFilters {
     search?: string;
     page?: number;
     pageSize?: number;
+    userDisplayName?: string;
 }
 
 export interface PaginatedRequests {

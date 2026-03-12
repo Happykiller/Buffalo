@@ -31,3 +31,35 @@ export const REQUEST_UPDATED_SUBSCRIPTION = gql`
     }
   }
 `;
+
+export const USER_REQUEST_CREATED_SUBSCRIPTION = gql`
+  subscription UserRequestCreated($userDisplayName: String!) {
+    userRequestCreated(userDisplayName: $userDisplayName) {
+      id
+      requestNumber
+      userDisplayName
+      message
+      criticality
+      status
+      themeKey
+      createdAt
+      processedAt
+    }
+  }
+`;
+
+export const USER_REQUEST_UPDATED_SUBSCRIPTION = gql`
+  subscription UserRequestUpdated($userDisplayName: String!) {
+    userRequestUpdated(userDisplayName: $userDisplayName) {
+      id
+      requestNumber
+      userDisplayName
+      message
+      criticality
+      status
+      themeKey
+      createdAt
+      processedAt
+    }
+  }
+`;

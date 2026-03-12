@@ -21,3 +21,34 @@ export const GET_REQUESTS = gql`
     }
   }
 `;
+
+export const GET_OPEN_REQUESTS_COUNT = gql`
+  query GetOpenRequestsCount {
+    requests(status: OPEN, page: 1, pageSize: 1) {
+      total
+    }
+  }
+`;
+
+export const GET_BACKEND_VERSION = gql`
+  query GetBackendVersion {
+    backendVersion
+  }
+`;
+
+export const GET_USER_REQUESTS = gql`
+  query GetUserRequests($userDisplayName: String!, $status: RequestStatus, $limit: Int) {
+    userRequests(userDisplayName: $userDisplayName, status: $status, limit: $limit) {
+      items {
+        id
+        requestNumber
+        message
+        criticality
+        createdAt
+        processedAt
+        status
+      }
+      total
+    }
+  }
+`;

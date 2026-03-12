@@ -418,6 +418,212 @@ body {
 }
 
 /* ========================================
+   User Profile Menu
+   ======================================== */
+
+.profile-menu-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 100;
+}
+
+.profile-menu-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 100px;
+  padding: 8px 16px;
+  color: #fff;
+  font-family: var(--font-main);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(10px);
+  transition: var(--transition);
+}
+
+.profile-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.profile-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: rgba(20, 20, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  padding: 8px;
+  min-width: 180px;
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(15px);
+  animation: slideIn 0.2s ease-out;
+}
+
+.profile-dropdown-btn {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: #ffb74d;
+  font-family: var(--font-main);
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-dropdown-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+/* ========================================
+   User Requests Badge
+   ======================================== */
+
+.user-requests-badge {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.badge-icon {
+  background: rgba(40, 44, 52, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 100px;
+  padding: 8px 16px;
+  color: #fff;
+  font-family: var(--font-main);
+  font-size: 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(10px);
+  transition: var(--transition);
+}
+
+.badge-count {
+  background: rgba(66, 165, 245, 0.2);
+  border: 1px solid rgba(66, 165, 245, 0.5);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  color: #90caf9;
+}
+
+.user-requests-badge:hover .badge-icon {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.user-requests-tooltip {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  background: rgba(20, 20, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  min-width: 320px;
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(15px);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-requests-badge:hover .user-requests-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.tooltip-section {
+  margin-bottom: 12px;
+}
+
+.tooltip-section:last-child {
+  margin-bottom: 0;
+}
+
+.tooltip-section strong {
+  display: block;
+  font-family: var(--font-main);
+  font-size: 14px;
+  color: #fff;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tooltip-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tooltip-list li {
+  font-family: var(--font-main);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 6px;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tooltip-list li:last-child {
+  margin-bottom: 0;
+}
+
+.tooltip-req-num {
+  font-family: var(--font-mono);
+  color: #9c27b0;
+  font-weight: bold;
+}
+
+.tooltip-req-desc {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.tooltip-empty {
+  font-family: var(--font-main);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+.tooltip-done-section {
+  margin-top: 16px;
+}
+
+.tooltip-done-item {
+  opacity: 0.7;
+}
+
+/* ========================================
    Admin Page
    ======================================== */
 

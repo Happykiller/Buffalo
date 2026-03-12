@@ -40,6 +40,10 @@ export class RequestRepositoryAdapter implements RequestRepositoryPort {
             ];
         }
 
+        if (filters.userDisplayName) {
+            query.userDisplayName = filters.userDisplayName;
+        }
+
         const [docs, total] = await Promise.all([
             this.requestModel
             .find(query)

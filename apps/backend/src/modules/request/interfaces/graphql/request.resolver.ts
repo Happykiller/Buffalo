@@ -1,6 +1,6 @@
 import { Resolver, Query, Mutation, Args, Int, Subscription } from '@nestjs/graphql';
 import { UseGuards, Inject } from '@nestjs/common';
-import { PubSub } from 'graphql-subscriptions';
+import { PubSub, withFilter } from 'graphql-subscriptions';
 import { RequestType } from './request.type';
 import { RequestPageType } from './request-page.type';
 import { CreateRequestInput } from './create-request.input';
@@ -31,6 +31,20 @@ export class RequestResolver {
         @Args('pageSize', { type: () => Int, nullable: true }) pageSize?: number,
     ): Promise<RequestPageType> {
         return this.getRequestsUseCase.execute({ status, criticality, search, page, pageSize });
+    }
+
+    @Query(() => RequestPageType, { name: 'userRequests' })
+    async getUserRequests(
+        @Args('userDisplayName') userDisplayName: string,
+        @Args('status', { type: () => RequestStatus, nullable: true }) status?: RequestStatus,
+        @Args('limit', { type: () => Int, nullable: true }) limit?: number,
+    ): Promise<RequestPageType> {
+        return this.getRequestsUseCase.execute({ 
+            userDisplayName, 
+            status, 
+            page: 1, 
+            pageSize: limit ?? 20 
+        });
     }
 
     @Mutation(() => RequestType)
@@ -66,6 +80,26 @@ export class RequestResolver {
     @Subscription(() => RequestType)
     @UseGuards(LocalhostAdminGuard)
     requestUpdated() {
+        return this.pubSub.asyncIterableIterator(REQUEST_UPDATED_EVENT);
+    }
+
+    @Subscription(() => RequestType, {
+        resolve: (payload) => payload.requestCreated,
+        filter: (payload, variables) => {
+            return payload.requestCreated.userDisplayName === variables.userDisplayName;
+        },
+    })
+    userRequestCreated(@Args('userDisplayName') userDisplayName: string) {
+        return this.pubSub.asyncIterableIterator(REQUEST_CREATED_EVENT);
+    }
+
+    @Subscription(() => RequestType, {
+        resolve: (payload) => payload.requestUpdated,
+        filter: (payload, variables) => {
+            return payload.requestUpdated.userDisplayName === variables.userDisplayName;
+        },
+    })
+    userRequestUpdated(@Args('userDisplayName') userDisplayName: string) {
         return this.pubSub.asyncIterableIterator(REQUEST_UPDATED_EVENT);
     }
 }

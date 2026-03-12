@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useSubscription } from '@apollo/client';
-import { GET_REQUESTS } from '../graphql/queries';
+import { GET_REQUESTS, GET_OPEN_REQUESTS_COUNT } from '../graphql/queries';
 import { REQUEST_CREATED_SUBSCRIPTION, REQUEST_UPDATED_SUBSCRIPTION } from '../graphql/subscriptions';
 import RequestList from '../components/RequestList';
 import { APP_NAME } from '../config';
@@ -45,12 +45,26 @@ export default function AdminPage() {
         skip: !isLocalhost,
     });
 
+    const { data: openData, refetch: refetchOpen } = useQuery(GET_OPEN_REQUESTS_COUNT, {
+        skip: !isLocalhost,
+    });
+
+    useEffect(() => {
+        if (openData?.requests?.total !== undefined) {
+            const count = openData.requests.total;
+            document.title = (count > 0 ? `(${count}) ` : '') + `${APP_NAME} Admin`;
+        } else {
+            document.title = `${APP_NAME} Admin`;
+        }
+    }, [openData?.requests?.total]);
+
     useSubscription(REQUEST_CREATED_SUBSCRIPTION, {
         skip: !isLocalhost,
         onData: ({ data: subscriptionData }) => {
             const created = subscriptionData.data?.requestCreated as AdminRequestItem | undefined;
             if (!created) return;
             refetch(variables);
+            refetchOpen();
 
             if (supportsNotifications && notificationPermission === 'granted') {
                 const number = created.requestNumber ? `#${created.requestNumber}` : created.id;
@@ -64,6 +78,7 @@ export default function AdminPage() {
         skip: !isLocalhost,
         onData: () => {
             refetch(variables);
+            refetchOpen();
         },
     });
 
