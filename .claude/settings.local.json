@@ -2,21 +2,7 @@
   "permissions": {
     "allow": [
       "WebSearch",
-      "Bash(docker compose:*)",
-      "Bash(docker ps:*)",
-      "Bash(docker logs:*)",
-      "Bash(curl:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "Bash(git check-ignore:*)",
-      "Bash(git ls-files:*)",
-      "Bash(git show:*)",
-      "Bash(npm run:*)",
-      "Bash(cat:*)",
-      "Bash(ls:*)"
+      "Bash(*)"
     ]
   },
   "enabledMcpjsonServers": [
