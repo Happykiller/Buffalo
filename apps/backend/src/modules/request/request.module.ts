@@ -6,6 +6,7 @@ import { RequestRepositoryAdapter } from './infrastructure/request-repository.ad
 import { REQUEST_REPOSITORY } from './domain/request-repository.port';
 import { CreateRequestUseCase } from './application/create-request.usecase';
 import { GetRequestsUseCase } from './application/get-requests.usecase';
+import { GetStatsUseCase } from './application/get-stats.usecase';
 import { MarkRequestDoneUseCase } from './application/mark-request-done.usecase';
 import { RequestResolver } from './interfaces/graphql/request.resolver';
 import { LocalhostAdminGuard } from './interfaces/graphql/localhost-admin.guard';
@@ -24,6 +25,7 @@ import { REQUEST_PUB_SUB } from './interfaces/graphql/request-events';
         { provide: REQUEST_PUB_SUB, useFactory: () => new PubSub() },
         CreateRequestUseCase,
         GetRequestsUseCase,
+        GetStatsUseCase,
         MarkRequestDoneUseCase,
         RequestResolver,
         LocalhostAdminGuard,

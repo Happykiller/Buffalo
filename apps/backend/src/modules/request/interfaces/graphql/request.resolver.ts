@@ -3,11 +3,13 @@ import { UseGuards, Inject } from '@nestjs/common';
 import { PubSub, withFilter } from 'graphql-subscriptions';
 import { RequestType } from './request.type';
 import { RequestPageType } from './request-page.type';
+import { RequestStatsType } from './request-stats.type';
 import { CreateRequestInput } from './create-request.input';
 import { Criticality } from '../../domain/criticality.enum';
 import { RequestStatus } from '../../domain/request-status.enum';
 import { CreateRequestUseCase } from '../../application/create-request.usecase';
 import { GetRequestsUseCase } from '../../application/get-requests.usecase';
+import { GetStatsUseCase } from '../../application/get-stats.usecase';
 import { MarkRequestDoneUseCase } from '../../application/mark-request-done.usecase';
 import { LocalhostAdminGuard } from './localhost-admin.guard';
 import { REQUEST_PUB_SUB, REQUEST_CREATED_EVENT, REQUEST_UPDATED_EVENT } from './request-events';
@@ -17,9 +19,15 @@ export class RequestResolver {
     constructor(
         private readonly createRequestUseCase: CreateRequestUseCase,
         private readonly getRequestsUseCase: GetRequestsUseCase,
+        private readonly getStatsUseCase: GetStatsUseCase,
         private readonly markRequestDoneUseCase: MarkRequestDoneUseCase,
         @Inject(REQUEST_PUB_SUB) private readonly pubSub: PubSub,
     ) { }
+
+    @Query(() => RequestStatsType, { name: 'stats' })
+    async getStats(): Promise<RequestStatsType> {
+        return this.getStatsUseCase.execute();
+    }
 
     @Query(() => RequestPageType, { name: 'requests' })
     @UseGuards(LocalhostAdminGuard)

@@ -43,6 +43,11 @@ export default function UserPage() {
             <div title="web" style={{ position: 'fixed', bottom: '12px', right: '16px', fontSize: '12px', opacity: 0.5, color: '#fff', cursor: 'help', fontFamily: 'var(--font-mono)', zIndex: 1000 }}>
                 v{pkg.version}
             </div>
+            <a href="/stats" title="Hall of Gloire" style={{ position: 'fixed', bottom: '10px', left: '50%', transform: 'translateX(-50%)', fontSize: '18px', opacity: 0.4, textDecoration: 'none', zIndex: 1000, transition: 'opacity 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
+                onMouseLeave={e => (e.currentTarget.style.opacity = '0.4')}>
+                🏆
+            </a>
         </>
     );
 

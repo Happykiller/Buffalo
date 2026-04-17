@@ -28,9 +28,31 @@ export interface CreateRequestData {
     themeKey: string;
 }
 
+export interface RequesterStat {
+    userDisplayName: string;
+    totalCount: number;
+    openCount: number;
+    doneCount: number;
+    urgentCount: number;
+}
+
+export interface RequestStats {
+    totalRequests: number;
+    openRequests: number;
+    doneRequests: number;
+    byLow: number;
+    byMedium: number;
+    byHigh: number;
+    byUrgent: number;
+    avgProcessingTimeMs: number | null;
+    topRequesters: RequesterStat[];
+    totalRequesters: number;
+}
+
 export interface RequestRepositoryPort {
     findAll(filters: RequestFilters): Promise<PaginatedRequests>;
     findById(id: string): Promise<Request | null>;
     create(data: CreateRequestData): Promise<Request>;
     markAsDone(id: string): Promise<Request | null>;
+    getStats(): Promise<RequestStats>;
 }

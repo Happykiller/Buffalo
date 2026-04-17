@@ -36,6 +36,29 @@ export const GET_BACKEND_VERSION = gql`
   }
 `;
 
+export const GET_STATS = gql`
+  query GetStats {
+    stats {
+      totalRequests
+      openRequests
+      doneRequests
+      byLow
+      byMedium
+      byHigh
+      byUrgent
+      avgProcessingTimeMs
+      totalRequesters
+      topRequesters {
+        userDisplayName
+        totalCount
+        openCount
+        doneCount
+        urgentCount
+      }
+    }
+  }
+`;
+
 export const GET_USER_REQUESTS = gql`
   query GetUserRequests($userDisplayName: String!, $status: RequestStatus, $limit: Int) {
     userRequests(userDisplayName: $userDisplayName, status: $status, limit: $limit) {

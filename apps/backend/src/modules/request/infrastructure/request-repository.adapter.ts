@@ -6,12 +6,52 @@ import {
     RequestFilters,
     CreateRequestData,
     PaginatedRequests,
+    RequestStats,
+    RequesterStat,
 } from '../domain/request-repository.port';
 import { Request } from '../domain/request.entity';
 import { Criticality } from '../domain/criticality.enum';
 import { RequestStatus } from '../domain/request-status.enum';
 import { RequestDocument } from './request.schema';
 import { RequestCounterDocument } from './request-counter.schema';
+
+// Plages horaires ouvrées : lundi-vendredi, 8h-12h et 13h30-18h
+const WORK_SLOTS = [
+    { start: 8 * 60, end: 12 * 60 },
+    { start: 13.5 * 60, end: 18 * 60 },
+];
+
+function workMinutesInDay(fromMin: number, toMin: number): number {
+    let total = 0;
+    for (const slot of WORK_SLOTS) {
+        const s = Math.max(fromMin, slot.start);
+        const e = Math.min(toMin, slot.end);
+        if (e > s) total += e - s;
+    }
+    return total;
+}
+
+function calcBusinessMinutes(start: Date, end: Date): number {
+    if (end <= start) return 0;
+    let total = 0;
+    let cursor = new Date(start);
+    while (cursor < end) {
+        const dow = cursor.getDay();
+        if (dow >= 1 && dow <= 5) {
+            const fromMin =
+                cursor.getHours() * 60 + cursor.getMinutes() + cursor.getSeconds() / 60;
+            const endOfDay = new Date(cursor);
+            endOfDay.setHours(23, 59, 59, 0);
+            const cap = end < endOfDay ? end : endOfDay;
+            const toMin = cap.getHours() * 60 + cap.getMinutes() + cap.getSeconds() / 60;
+            total += workMinutesInDay(fromMin, toMin);
+        }
+        cursor = new Date(cursor);
+        cursor.setDate(cursor.getDate() + 1);
+        cursor.setHours(0, 0, 0, 0);
+    }
+    return total;
+}
 
 @Injectable()
 export class RequestRepositoryAdapter implements RequestRepositoryPort {
@@ -104,6 +144,84 @@ export class RequestRepositoryAdapter implements RequestRepositoryPort {
             )
             .exec();
         return doc ? this.toEntity(doc) : null;
+    }
+
+    async getStats(): Promise<RequestStats> {
+        const [statusCounts, critCounts, topRequesters, doneDocs, uniqueRequesters] =
+            await Promise.all([
+                this.requestModel.aggregate<{ _id: string; count: number }>([
+                    { $group: { _id: '$status', count: { $sum: 1 } } },
+                ]),
+                this.requestModel.aggregate<{ _id: string; count: number }>([
+                    { $group: { _id: '$criticality', count: { $sum: 1 } } },
+                ]),
+                this.requestModel.aggregate<{
+                    _id: string;
+                    totalCount: number;
+                    openCount: number;
+                    doneCount: number;
+                    urgentCount: number;
+                }>([
+                    {
+                        $group: {
+                            _id: '$userDisplayName',
+                            totalCount: { $sum: 1 },
+                            openCount: { $sum: { $cond: [{ $eq: ['$status', 'OPEN'] }, 1, 0] } },
+                            doneCount: { $sum: { $cond: [{ $eq: ['$status', 'DONE'] }, 1, 0] } },
+                            urgentCount: {
+                                $sum: { $cond: [{ $eq: ['$criticality', 'URGENT'] }, 1, 0] },
+                            },
+                        },
+                    },
+                    { $sort: { totalCount: -1 } },
+                    { $limit: 10 },
+                ]),
+                this.requestModel
+                    .find({ status: 'DONE', processedAt: { $ne: null } })
+                    .select({ createdAt: 1, processedAt: 1 })
+                    .lean()
+                    .exec(),
+                this.requestModel.aggregate<{ count: number }>([
+                    { $group: { _id: '$userDisplayName' } },
+                    { $count: 'count' },
+                ]),
+            ]);
+
+        const sc = (status: string) => statusCounts.find((s) => s._id === status)?.count ?? 0;
+        const cc = (crit: string) => critCounts.find((c) => c._id === crit)?.count ?? 0;
+
+        let avgProcessingTimeMs: number | null = null;
+        if (doneDocs.length > 0) {
+            const totalBusinessMs = doneDocs.reduce((sum, doc) => {
+                const minutes = calcBusinessMinutes(
+                    new Date(doc.createdAt),
+                    new Date(doc.processedAt as Date),
+                );
+                return sum + minutes * 60 * 1000;
+            }, 0);
+            avgProcessingTimeMs = totalBusinessMs / doneDocs.length;
+        }
+
+        return {
+            totalRequests: sc('OPEN') + sc('DONE'),
+            openRequests: sc('OPEN'),
+            doneRequests: sc('DONE'),
+            byLow: cc('LOW'),
+            byMedium: cc('MEDIUM'),
+            byHigh: cc('HIGH'),
+            byUrgent: cc('URGENT'),
+            avgProcessingTimeMs,
+            topRequesters: topRequesters.map(
+                (r): RequesterStat => ({
+                    userDisplayName: r._id,
+                    totalCount: r.totalCount,
+                    openCount: r.openCount,
+                    doneCount: r.doneCount,
+                    urgentCount: r.urgentCount,
+                }),
+            ),
+            totalRequesters: uniqueRequesters[0]?.count ?? 0,
+        };
     }
 
     private toEntity(doc: RequestDocument): Request {
