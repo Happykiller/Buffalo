@@ -14,7 +14,7 @@ docker compose up --build
 |---|---|
 | Interface utilisateur | http://localhost:5173/user |
 | Interface admin | http://localhost:5173/admin |
-| GraphQL Playground | http://localhost:3000/graphql |
+| GraphQL Playground | http://localhost:3100/graphql |
 
 ## Fonctionnalites
 
@@ -41,8 +41,8 @@ docker compose up --build
 Dans `apps/frontend/.env.local`:
 
 ```env
-# Dev local hors Docker (sinon fallback: http://backend:3000)
-VITE_GRAPHQL_PROXY_TARGET=http://localhost:3000
+# Dev local hors Docker (sinon fallback: http://backend:3100)
+VITE_GRAPHQL_PROXY_TARGET=http://localhost:3100
 
 # Nom de l'app affiche dans l'UI (fallback: Buffalo)
 VITE_APP_NAME=OnlyFab
@@ -51,6 +51,7 @@ VITE_APP_NAME=OnlyFab
 ## Variables d'environnement (backend)
 
 - `MONGO_URI` (optionnel) - fallback: `mongodb://localhost:27017/buffalo`
+- `PORT` (optionnel) - fallback: `3100`
 
 ## API GraphQL
 

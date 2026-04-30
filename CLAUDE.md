@@ -10,7 +10,7 @@ Buffalo ("Bureau des Demandes Absurdes") is a playful internal request managemen
 
 - User UI: http://localhost:5173/user
 - Admin UI: http://localhost:5173/admin (localhost-only access)
-- GraphQL Playground: http://localhost:3000/graphql
+- GraphQL Playground: http://localhost:3100/graphql
 
 ## Development Commands
 
@@ -32,8 +32,8 @@ npm run preview      # Preview production build
 
 ### Environment Variables
 
-- Backend: `MONGO_URI` (default: `mongodb://localhost:27017/buffalo`)
-- Frontend: `VITE_GRAPHQL_PROXY_TARGET` (default: `http://backend:3000`), `VITE_APP_NAME` (default: `"Buffalo"`)
+- Backend: `MONGO_URI` (default: `mongodb://localhost:27017/buffalo`), `PORT` (default: `3100`)
+- Frontend: `VITE_GRAPHQL_PROXY_TARGET` (default: `http://backend:3100`), `VITE_APP_NAME` (default: `"Buffalo"`)
 
 ## Architecture
 
@@ -41,7 +41,7 @@ npm run preview      # Preview production build
 
 ```
 apps/
-  backend/   — NestJS GraphQL server (port 3000)
+  backend/   — NestJS GraphQL server (port 3100 by default)
   frontend/  — React + Vite SPA (port 5173)
 docker/      — Dockerfiles + MongoDB seed script
 ```

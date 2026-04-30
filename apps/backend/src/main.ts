@@ -3,9 +3,11 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
+    const port = Number.parseInt(process.env.PORT ?? '3100', 10);
+
     app.enableCors();
-    await app.listen(3000);
-    console.log('🐃 Buffalo backend running on http://localhost:3000');
-    console.log('📊 GraphQL Playground: http://localhost:3000/graphql');
+    await app.listen(port);
+    console.log(`🐃 Buffalo backend running on http://localhost:${port}`);
+    console.log(`📊 GraphQL Playground: http://localhost:${port}/graphql`);
 }
 bootstrap();
