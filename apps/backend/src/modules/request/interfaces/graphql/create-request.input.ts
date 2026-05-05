@@ -9,6 +9,9 @@ export class CreateRequestInput {
     @Field(() => String, { nullable: true })
     message!: string | null;
 
+    @Field(() => String, { nullable: true })
+    url!: string | null;
+
     @Field(() => Criticality)
     criticality!: Criticality;
 

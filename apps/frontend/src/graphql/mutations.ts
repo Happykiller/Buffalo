@@ -6,6 +6,7 @@ export const CREATE_REQUEST = gql`
       id
       requestNumber
       message
+      url
       criticality
       status
       themeKey

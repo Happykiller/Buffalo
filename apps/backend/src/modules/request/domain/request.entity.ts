@@ -6,6 +6,7 @@ export class Request {
     userDisplayName: string;
     requestNumber: number | null;
     message: string | null;
+    url: string | null;
     criticality: Criticality;
     status: RequestStatus;
     themeKey: string;
@@ -17,6 +18,7 @@ export class Request {
         userDisplayName: string;
         requestNumber: number | null;
         message: string | null;
+        url: string | null;
         criticality: Criticality;
         status: RequestStatus;
         themeKey: string;
@@ -27,6 +29,7 @@ export class Request {
         this.userDisplayName = props.userDisplayName;
         this.requestNumber = props.requestNumber;
         this.message = props.message;
+        this.url = props.url;
         this.criticality = props.criticality;
         this.status = props.status;
         this.themeKey = props.themeKey;

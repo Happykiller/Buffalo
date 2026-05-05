@@ -7,6 +7,7 @@ interface RequestItem {
     requestNumber?: number | null;
     userDisplayName: string;
     message: string | null;
+    url: string | null;
     criticality: string;
     status: string;
     themeKey: string;
@@ -66,6 +67,16 @@ export default function RequestList({ requests, queryVariables }: RequestListPro
                         <div className="request-item-main">
                             <div className="request-item-content">
                                 <p className="request-message">{req.message || '(Sans description)'}</p>
+                                {req.url && (
+                                    <a
+                                        className="request-link"
+                                        href={req.url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        🔗 {req.url}
+                                    </a>
+                                )}
 
                                 <div className="request-item-footer">
                                     <span className="request-date">📅 {formatDate(req.createdAt)}</span>

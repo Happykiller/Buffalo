@@ -198,7 +198,7 @@ export default function StatsPage() {
                 <div style={{ ...cardStyle, marginBottom: '32px' }}>
                     <h2 style={sectionTitle}>⚡ Répartition par criticité</h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {criticalities.map(({ key, label, emoji, color, bg }) => {
+                        {criticalities.map(({ key, label, emoji, color }) => {
                             const count = stats[key as keyof Stats] as number;
                             const pct = Math.round((count / maxCritCount) * 100);
                             return (

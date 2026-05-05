@@ -13,6 +13,7 @@ export class CreateRequestUseCase {
         return this.requestRepository.create({
             userDisplayName: dto.userDisplayName,
             message: dto.message ?? null,
+            url: dto.url ?? null,
             criticality: dto.criticality,
             themeKey: dto.themeKey,
         });

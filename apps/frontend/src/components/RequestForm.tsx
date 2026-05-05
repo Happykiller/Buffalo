@@ -32,11 +32,33 @@ function formatSubmissionError(error: unknown): string {
 export default function RequestForm({ user, theme, onNewTheme }: RequestFormProps) {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [message, setMessage] = useState('');
+    const [url, setUrl] = useState('');
     const [criticality, setCriticality] = useState('MEDIUM');
     const [confirmation, setConfirmation] = useState<string | null>(null);
     const [createdRequestNumber, setCreatedRequestNumber] = useState<number | null>(null);
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [createRequest, { loading }] = useMutation(CREATE_REQUEST);
+
+    const normalizeUrl = (value: string): string | null => {
+        const trimmedValue = value.trim();
+        if (!trimmedValue) {
+            return null;
+        }
+
+        const candidate = /^https?:\/\//i.test(trimmedValue)
+            ? trimmedValue
+            : `https://${trimmedValue}`;
+
+        try {
+            const parsedUrl = new URL(candidate);
+            if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+                return null;
+            }
+            return parsedUrl.toString();
+        } catch {
+            return null;
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -44,11 +66,18 @@ export default function RequestForm({ user, theme, onNewTheme }: RequestFormProp
 
         try {
             const trimmedMessage = message.trim();
+            const normalizedUrl = normalizeUrl(url);
+            if (url.trim() && !normalizedUrl) {
+                setSubmitError("L'URL fournie n'est pas valide.");
+                return;
+            }
+
             const result = await createRequest({
                 variables: {
                     input: {
                         userDisplayName: user.displayName,
                         message: trimmedMessage ? trimmedMessage : null,
+                        url: normalizedUrl,
                         criticality,
                         themeKey: theme.key,
                     },
@@ -58,6 +87,7 @@ export default function RequestForm({ user, theme, onNewTheme }: RequestFormProp
             const requestNumber = result.data?.createRequest?.requestNumber ?? null;
             setCreatedRequestNumber(requestNumber);
             setMessage('');
+            setUrl('');
             setCriticality('MEDIUM');
             setConfirmation(theme.confirmMessage);
         } catch (error) {
@@ -180,6 +210,24 @@ export default function RequestForm({ user, theme, onNewTheme }: RequestFormProp
                                     </button>
                                 ))}
                             </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label" style={{ color: theme.textColor }}>
+                                🔗 URL
+                            </label>
+                            <input
+                                type="url"
+                                className="form-input"
+                                placeholder="https://exemple.fr/ton-lien"
+                                value={url}
+                                onChange={(e) => setUrl(e.target.value)}
+                                style={{
+                                    background: theme.inputBg,
+                                    borderColor: theme.inputBorder,
+                                    color: theme.textColor,
+                                }}
+                            />
                         </div>
 
                         <div className="form-group">

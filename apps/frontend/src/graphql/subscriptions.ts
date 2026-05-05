@@ -7,6 +7,7 @@ export const REQUEST_CREATED_SUBSCRIPTION = gql`
       requestNumber
       userDisplayName
       message
+      url
       criticality
       status
       themeKey
@@ -23,6 +24,7 @@ export const REQUEST_UPDATED_SUBSCRIPTION = gql`
       requestNumber
       userDisplayName
       message
+      url
       criticality
       status
       themeKey
@@ -39,6 +41,7 @@ export const USER_REQUEST_CREATED_SUBSCRIPTION = gql`
       requestNumber
       userDisplayName
       message
+      url
       criticality
       status
       themeKey
@@ -55,6 +58,7 @@ export const USER_REQUEST_UPDATED_SUBSCRIPTION = gql`
       requestNumber
       userDisplayName
       message
+      url
       criticality
       status
       themeKey

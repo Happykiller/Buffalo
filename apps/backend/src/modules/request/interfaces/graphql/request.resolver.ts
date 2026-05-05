@@ -62,6 +62,7 @@ export class RequestResolver {
         const request = await this.createRequestUseCase.execute({
             userDisplayName: input.userDisplayName,
             message: input.message ?? null,
+            url: input.url ?? null,
             criticality: input.criticality,
             themeKey: input.themeKey,
         });

@@ -24,6 +24,7 @@ export interface PaginatedRequests {
 export interface CreateRequestData {
     userDisplayName: string;
     message: string | null;
+    url: string | null;
     criticality: Criticality;
     themeKey: string;
 }

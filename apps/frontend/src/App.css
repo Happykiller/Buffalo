@@ -290,6 +290,20 @@ body {
   gap: 8px;
 }
 
+.form-input {
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  padding: 14px 18px;
+  font-family: var(--font-main);
+  font-size: 15px;
+  outline: none;
+  transition: var(--transition);
+}
+
+.form-input:focus {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
 .form-label {
   font-size: 14px;
   font-weight: 600;
@@ -921,6 +935,19 @@ body {
   color: rgba(255, 255, 255, 0.8);
   margin-bottom: 12px;
   white-space: pre-wrap;
+}
+
+.request-link {
+  display: inline-block;
+  margin-bottom: 12px;
+  color: #8bd3ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  word-break: break-all;
+}
+
+.request-link:hover {
+  color: #b8e6ff;
 }
 
 .request-item-footer {

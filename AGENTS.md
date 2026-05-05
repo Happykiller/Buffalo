@@ -10,7 +10,7 @@ Quick start: `docker compose up --build`
 
 - User UI: http://localhost:5173/user
 - Admin UI: http://localhost:5173/admin
-- GraphQL Playground: http://localhost:3100/graphql
+- GraphQL Playground: http://localhost:3200/graphql
 
 ## Development Commands
 
@@ -32,8 +32,8 @@ npm run preview
 
 ## Environment Variables
 
-- Backend: `MONGO_URI` (default: `mongodb://localhost:27017/buffalo`), `PORT` (default: `3100`)
-- Frontend: `VITE_GRAPHQL_PROXY_TARGET` (default: `http://backend:3100`), `VITE_APP_NAME` (default: `"Buffalo"`)
+- Backend: `MONGO_URI` (default: `mongodb://localhost:27017/buffalo`), `PORT` (default: `3200`)
+- Frontend: `VITE_GRAPHQL_PROXY_TARGET` (default: `http://backend:3200`), `VITE_APP_NAME` (default: `"Buffalo"`)
 
 ## Architecture
 
@@ -41,7 +41,7 @@ npm run preview
 
 ```text
 apps/
-  backend/   - NestJS GraphQL server (port 3100 by default)
+  backend/   - NestJS GraphQL server (port 3200 by default)
   frontend/  - React + Vite SPA (port 5173)
 docker/      - Dockerfiles and MongoDB seed script
 ```

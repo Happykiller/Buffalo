@@ -2,6 +2,7 @@ services:
   mongo:
     image: mongo:7
     container_name: buffalo-mongo
+    restart: unless-stopped
     ports:
       - '27017:27017'
     volumes:
@@ -15,11 +16,12 @@ services:
       context: ./apps/backend
       dockerfile: ../../docker/backend.Dockerfile
     container_name: buffalo-backend
+    restart: unless-stopped
     ports:
-      - '3100:3100'
+      - '3200:3200'
     environment:
       - MONGO_URI=mongodb://mongo:27017/buffalo
-      - PORT=3100
+      - PORT=3200
     volumes:
       - ./apps/backend/src:/app/src
     depends_on:
@@ -32,12 +34,13 @@ services:
       context: ./apps/frontend
       dockerfile: ../../docker/frontend.Dockerfile
     container_name: buffalo-frontend
+    restart: unless-stopped
     ports:
       - '5175:5173'
     env_file:
       - ./apps/frontend/.env
     environment:
-      - VITE_GRAPHQL_PROXY_TARGET=http://backend:3100
+      - VITE_GRAPHQL_PROXY_TARGET=http://backend:3200
     volumes:
       - ./apps/frontend/src:/app/src
       - ./apps/frontend/index.html:/app/index.html

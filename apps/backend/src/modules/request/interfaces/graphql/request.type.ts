@@ -16,6 +16,9 @@ export class RequestType {
     @Field(() => String, { nullable: true })
     message!: string | null;
 
+    @Field(() => String, { nullable: true })
+    url!: string | null;
+
     @Field(() => Criticality)
     criticality!: Criticality;
 

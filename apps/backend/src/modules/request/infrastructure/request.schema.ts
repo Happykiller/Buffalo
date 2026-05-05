@@ -12,6 +12,9 @@ export class RequestDocument extends Document {
     @Prop({ type: String, required: false, default: null })
     message!: string | null;
 
+    @Prop({ type: String, required: false, default: null })
+    url!: string | null;
+
     @Prop({ required: true })
     criticality!: string;
 

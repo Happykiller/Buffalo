@@ -8,6 +8,7 @@ export const GET_REQUESTS = gql`
         requestNumber
         userDisplayName
         message
+        url
         criticality
         status
         themeKey
@@ -66,6 +67,7 @@ export const GET_USER_REQUESTS = gql`
         id
         requestNumber
         message
+        url
         criticality
         createdAt
         processedAt
