@@ -1,33 +1,16 @@
-import { useState, useEffect } from 'react';
 import IdentifyForm from '../components/IdentifyForm';
 import RequestForm from '../components/RequestForm';
-import UserRequestsBadge from '../components/UserRequestsBadge';
-import { getRandomTheme, type Theme } from '../themes';
-import { USER_STORAGE_KEY } from '../config';
-import { useQuery } from '@apollo/client';
-import { GET_BACKEND_VERSION } from '../graphql/queries';
-import pkg from '../../package.json';
-
-interface User {
-    id: string;
-    displayName: string;
-}
+import { getRandomTheme } from '../themes';
+import { useOutletContext } from 'react-router-dom';
+import { useStoredUser } from '../hooks/useStoredUser';
+import type { UserShellContext } from '../types/user-shell-context';
 
 export default function UserPage() {
-    const [user, setUser] = useState<User | null>(null);
-    const [theme, setTheme] = useState<Theme>(getRandomTheme());
-    const { data: versionData } = useQuery(GET_BACKEND_VERSION);
-
-    useEffect(() => {
-        const stored = localStorage.getItem(USER_STORAGE_KEY);
-        if (stored) {
-            try {
-                setUser(JSON.parse(stored));
-            } catch {
-                localStorage.removeItem(USER_STORAGE_KEY);
-            }
-        }
-    }, []);
+    const outletContext = useOutletContext<UserShellContext | undefined>();
+    const { user: storedUser, setUser, isReady } = useStoredUser();
+    const user = outletContext?.user ?? storedUser;
+    const theme = outletContext?.theme ?? getRandomTheme();
+    const setTheme = outletContext?.setTheme ?? (() => undefined);
 
     const handleNewTheme = () => {
         setTheme(getRandomTheme());
@@ -35,14 +18,6 @@ export default function UserPage() {
 
     const versionElement = (
         <>
-            {versionData?.backendVersion && (
-                <div title="moteur" style={{ position: 'fixed', bottom: '12px', left: '16px', fontSize: '12px', opacity: 0.5, color: '#fff', cursor: 'help', fontFamily: 'var(--font-mono)', zIndex: 1000 }}>
-                    v{versionData.backendVersion}
-                </div>
-            )}
-            <div title="web" style={{ position: 'fixed', bottom: '12px', right: '16px', fontSize: '12px', opacity: 0.5, color: '#fff', cursor: 'help', fontFamily: 'var(--font-mono)', zIndex: 1000 }}>
-                v{pkg.version}
-            </div>
             <a href="/stats" title="Hall of Gloire" style={{ position: 'fixed', bottom: '10px', left: '50%', transform: 'translateX(-50%)', fontSize: '18px', opacity: 0.4, textDecoration: 'none', zIndex: 1000, transition: 'opacity 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
                 onMouseLeave={e => (e.currentTarget.style.opacity = '0.4')}>
@@ -51,7 +26,7 @@ export default function UserPage() {
         </>
     );
 
-    if (!user) {
+    if (!user && isReady) {
         return (
             <div style={{ position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ flex: 1 }}>
@@ -62,9 +37,12 @@ export default function UserPage() {
         );
     }
 
+    if (!user) {
+        return null;
+    }
+
     return (
-        <div style={{ position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-            <UserRequestsBadge user={user} />
+        <div style={{ position: 'relative', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
             <div style={{ flex: 1 }}>
                 <RequestForm user={user} theme={theme} onNewTheme={handleNewTheme} />
             </div>

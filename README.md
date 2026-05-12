@@ -13,6 +13,8 @@ docker compose up --build
 | Service | URL |
 |---|---|
 | Interface utilisateur | http://localhost:5173/user |
+| Ticketing utilisateur | http://localhost:5173/user/ticketing |
+| Daily Board | http://localhost:5173/user/daily |
 | Interface admin | http://localhost:5173/admin |
 | GraphQL Playground | http://localhost:3200/graphql |
 
@@ -21,10 +23,22 @@ docker compose up --build
 ### Cote utilisateur (`/user`)
 
 - Identification locale (stockage navigateur)
+- Navigation persistante post-login entre `Ticketing` et `Daily Board`
 - Theme aleatoire a chaque session/nouvelle demande
 - Creation d'une demande avec criticite
 - `message` optionnel
 - Ecran de succes avec numero de demande (`requestNumber`)
+
+### Daily Board (`/user/daily`)
+
+- Header compact avec date du jour, presence connectee et etat de sauvegarde
+- Focus du jour editable inline
+- Blocages actifs visibles en haut avec resolution rapide
+- Vue par personne en 4 colonnes: `Fait hier`, `En cours`, `A faire aujourd'hui`, `Blocages`
+- Creation de note par modale compacte
+- Edition inline du titre, changement de label, lien, reassignation, suppression avec undo
+- Historique par jour avec filtres et deux modes d'affichage
+- Mise a jour temps reel via GraphQL subscriptions
 
 ### Cote admin (`/admin`)
 
@@ -140,12 +154,148 @@ subscription {
 }
 ```
 
+## API GraphQL - Daily Board
+
+### Query: board du jour
+
+```graphql
+query GetDailyBoard($date: String, $currentPseudo: String) {
+  dailyBoard(date: $date, currentPseudo: $currentPseudo) {
+    board {
+      id
+      date
+      focus
+    }
+    blockers {
+      id
+      title
+      ownerPseudo
+      column
+    }
+    people {
+      pseudo
+      status
+      doneYesterday { id title }
+      inProgress { id title }
+      today { id title }
+      blockers { id title }
+    }
+    labels
+    connectedCount
+    savedAt
+  }
+}
+```
+
+### Mutations: notes, focus, presence
+
+```graphql
+mutation CreateDailyNote($input: CreateDailyNoteInput!) {
+  createDailyNote(input: $input) {
+    id
+  }
+}
+```
+
+```graphql
+mutation UpdateDailyNote($noteId: String!, $input: UpdateDailyNoteInput!) {
+  updateDailyNote(noteId: $noteId, input: $input) {
+    id
+  }
+}
+```
+
+```graphql
+mutation DeleteDailyNote($noteId: String!) {
+  deleteDailyNote(noteId: $noteId) {
+    id
+  }
+}
+```
+
+```graphql
+mutation RestoreDailyNote($noteId: String!) {
+  restoreDailyNote(noteId: $noteId) {
+    id
+  }
+}
+```
+
+```graphql
+mutation UpdateDailyFocus($input: UpdateDailyFocusInput!) {
+  updateDailyFocus(input: $input)
+}
+```
+
+```graphql
+mutation HeartbeatDailyPresence($input: DailyPresenceInput!) {
+  heartbeatDailyPresence(input: $input) {
+    id
+    lastSeenAt
+  }
+}
+```
+
+### Query: historique
+
+```graphql
+query GetDailyHistory($from: String, $to: String, $groupBy: DailyHistoryGroupBy, $filter: DailyHistoryFilter) {
+  dailyHistory(from: $from, to: $to, groupBy: $groupBy, filter: $filter) {
+    board {
+      id
+      date
+      focus
+    }
+    events {
+      id
+      pseudo
+      kind
+      title
+      createdAt
+    }
+    people {
+      pseudo
+      items {
+        id
+        title
+      }
+    }
+  }
+}
+```
+
+### Subscriptions: live updates
+
+```graphql
+subscription DailyBoardUpdated($boardDate: String!) {
+  dailyBoardUpdated(boardDate: $boardDate) {
+    boardDate
+    kind
+    pseudo
+    noteId
+    occurredAt
+  }
+}
+```
+
+```graphql
+subscription DailyPresenceChanged($boardDate: String!) {
+  dailyPresenceChanged(boardDate: $boardDate) {
+    boardDate
+    kind
+    pseudo
+    occurredAt
+  }
+}
+```
+
 ## Architecture
 
 ```
 apps/
   backend/          # NestJS + GraphQL code-first + Mongoose
     src/modules/request/
+    src/modules/daily-board/
       domain/
       application/
       infrastructure/

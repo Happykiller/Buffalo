@@ -77,3 +77,181 @@ export const GET_USER_REQUESTS = gql`
     }
   }
 `;
+
+export const GET_DAILY_BOARD = gql`
+  query GetDailyBoard($date: String, $currentPseudo: String) {
+    dailyBoard(date: $date, currentPseudo: $currentPseudo) {
+      board {
+        id
+        date
+        focus
+        createdAt
+        updatedAt
+      }
+      blockers {
+        id
+        boardId
+        ownerPseudo
+        authorPseudo
+        column
+        title
+        description
+        label
+        url
+        done
+        blockedSince
+        doneAt
+        helpNeeded
+        unblockAssignedTo
+        deletedAt
+        createdAt
+        updatedAt
+      }
+      people {
+        pseudo
+        status
+        doneYesterday {
+          id
+          boardId
+          ownerPseudo
+          authorPseudo
+          column
+          title
+          description
+          label
+          url
+          done
+          blockedSince
+          doneAt
+          helpNeeded
+          unblockAssignedTo
+          deletedAt
+          createdAt
+          updatedAt
+        }
+        todo {
+          id
+          boardId
+          ownerPseudo
+          authorPseudo
+          column
+          title
+          description
+          label
+          url
+          done
+          blockedSince
+          doneAt
+          helpNeeded
+          unblockAssignedTo
+          deletedAt
+          createdAt
+          updatedAt
+        }
+        doing {
+          id
+          boardId
+          ownerPseudo
+          authorPseudo
+          column
+          title
+          description
+          label
+          url
+          done
+          blockedSince
+          doneAt
+          helpNeeded
+          unblockAssignedTo
+          deletedAt
+          createdAt
+          updatedAt
+        }
+        blocked {
+          id
+          boardId
+          ownerPseudo
+          authorPseudo
+          column
+          title
+          description
+          label
+          url
+          done
+          blockedSince
+          doneAt
+          helpNeeded
+          unblockAssignedTo
+          deletedAt
+          createdAt
+          updatedAt
+        }
+        done {
+          id
+          boardId
+          ownerPseudo
+          authorPseudo
+          column
+          title
+          description
+          label
+          url
+          done
+          blockedSince
+          doneAt
+          helpNeeded
+          unblockAssignedTo
+          deletedAt
+          createdAt
+          updatedAt
+        }
+      }
+      presence {
+        id
+        boardId
+        pseudo
+        lastSeenAt
+        editingSectionId
+      }
+      labels
+      connectedCount
+      savedAt
+    }
+  }
+`;
+
+export const GET_DAILY_HISTORY = gql`
+  query GetDailyHistory($from: String, $to: String, $groupBy: DailyHistoryGroupBy, $filter: DailyHistoryFilter) {
+    dailyHistory(from: $from, to: $to, groupBy: $groupBy, filter: $filter) {
+      board {
+        id
+        date
+        focus
+        createdAt
+        updatedAt
+      }
+      focus
+      events {
+        id
+        pseudo
+        kind
+        title
+        label
+        column
+        createdAt
+      }
+      people {
+        pseudo
+        items {
+          id
+          pseudo
+          kind
+          title
+          label
+          column
+          createdAt
+        }
+      }
+    }
+  }
+`;

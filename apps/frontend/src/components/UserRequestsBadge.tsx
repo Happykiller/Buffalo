@@ -9,6 +9,7 @@ interface User {
 
 interface UserRequestsBadgeProps {
     user: User;
+    compact?: boolean;
 }
 
 function formatDate(dateString: string | null) {
@@ -39,7 +40,7 @@ function getCriticalityEmoji(crit: string): string {
     }
 }
 
-export default function UserRequestsBadge({ user }: UserRequestsBadgeProps) {
+export default function UserRequestsBadge({ user, compact = false }: UserRequestsBadgeProps) {
     // Open Requests Query
     const { data: openData, refetch: refetchOpen } = useQuery(GET_USER_REQUESTS, {
         variables: { userDisplayName: user.displayName, status: 'OPEN' },
@@ -72,12 +73,12 @@ export default function UserRequestsBadge({ user }: UserRequestsBadgeProps) {
     const openItems = openData?.userRequests?.items ?? [];
     const doneItems = doneData?.userRequests?.items ?? [];
 
-    if (openCount === 0 && doneItems.length === 0) {
+    if (!compact && openCount === 0 && doneItems.length === 0) {
         return null;
     }
 
     return (
-        <div className="user-requests-badge">
+        <div className={`user-requests-badge${compact ? ' user-requests-badge--compact' : ''}`}>
             <div className="badge-icon">
                 📊
                 <span className="badge-count">{openCount}</span>

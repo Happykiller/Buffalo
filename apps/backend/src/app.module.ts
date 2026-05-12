@@ -4,6 +4,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { MongooseModule } from '@nestjs/mongoose';
 import { RequestModule } from './modules/request/request.module';
 import { AppResolver } from './app.resolver';
+import { DailyBoardModule } from './modules/daily-board/daily-board.module';
 
 @Module({
     imports: [
@@ -23,6 +24,7 @@ import { AppResolver } from './app.resolver';
             }),
         }),
         RequestModule,
+        DailyBoardModule,
     ],
     providers: [AppResolver],
 })

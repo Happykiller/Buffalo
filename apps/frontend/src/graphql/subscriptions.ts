@@ -67,3 +67,27 @@ export const USER_REQUEST_UPDATED_SUBSCRIPTION = gql`
     }
   }
 `;
+
+export const DAILY_BOARD_UPDATED_SUBSCRIPTION = gql`
+  subscription DailyBoardUpdated($boardDate: String!) {
+    dailyBoardUpdated(boardDate: $boardDate) {
+      boardDate
+      kind
+      pseudo
+      noteId
+      occurredAt
+    }
+  }
+`;
+
+export const DAILY_PRESENCE_CHANGED_SUBSCRIPTION = gql`
+  subscription DailyPresenceChanged($boardDate: String!) {
+    dailyPresenceChanged(boardDate: $boardDate) {
+      boardDate
+      kind
+      pseudo
+      noteId
+      occurredAt
+    }
+  }
+`;

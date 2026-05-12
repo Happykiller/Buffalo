@@ -1,10 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { APP_NAME, USER_STORAGE_KEY } from '../config';
-
-interface User {
-    id: string;
-    displayName: string;
-}
+import type { User } from '../types/user';
 
 interface IdentifyFormProps {
     onIdentified: (user: User) => void;
@@ -12,6 +9,7 @@ interface IdentifyFormProps {
 
 export default function IdentifyForm({ onIdentified }: IdentifyFormProps) {
     const [name, setName] = useState('');
+    const navigate = useNavigate();
 
     const handleSubmit = (displayName: string) => {
         const trimmed = displayName.trim();
@@ -20,6 +18,7 @@ export default function IdentifyForm({ onIdentified }: IdentifyFormProps) {
         const user = { id: `local_${Date.now()}`, displayName: trimmed };
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
         onIdentified(user);
+        navigate('/user/ticketing', { replace: true });
     };
 
     return (

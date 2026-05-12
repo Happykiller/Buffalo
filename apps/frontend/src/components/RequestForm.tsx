@@ -2,12 +2,7 @@ import { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import { CREATE_REQUEST } from '../graphql/mutations';
 import { type Theme } from '../themes';
-import { USER_STORAGE_KEY } from '../config';
-
-interface User {
-    id: string;
-    displayName: string;
-}
+import type { User } from '../types/user';
 
 interface RequestFormProps {
     user: User;
@@ -30,7 +25,6 @@ function formatSubmissionError(error: unknown): string {
 }
 
 export default function RequestForm({ user, theme, onNewTheme }: RequestFormProps) {
-    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [url, setUrl] = useState('');
     const [criticality, setCriticality] = useState('MEDIUM');
@@ -112,28 +106,6 @@ export default function RequestForm({ user, theme, onNewTheme }: RequestFormProp
                 minHeight: '100vh',
             }}
         >
-            <div className="profile-menu-container">
-                <button 
-                    className="profile-menu-btn" 
-                    onClick={() => setIsProfileOpen(!isProfileOpen)}
-                >
-                    👤 {user.displayName}
-                </button>
-                {isProfileOpen && (
-                    <div className="profile-dropdown">
-                        <button
-                            className="profile-dropdown-btn"
-                            onClick={() => {
-                                localStorage.removeItem(USER_STORAGE_KEY);
-                                window.location.reload();
-                            }}
-                        >
-                            🚪 Changer d'identité
-                        </button>
-                    </div>
-                )}
-            </div>
-
             <div
                 className="request-card"
                 style={{
