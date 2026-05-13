@@ -42,6 +42,12 @@ export function getTodayBoardDate(now = new Date()): string {
     return `${year}-${month}-${day}`;
 }
 
+export function getPreviousBoardDate(date: string): string {
+    const previous = new Date(`${date}T12:00:00`);
+    previous.setDate(previous.getDate() - 1);
+    return getTodayBoardDate(previous);
+}
+
 export function sanitizeNotePatch(patch: UpdateDailyNoteData): UpdateDailyNoteData {
     const sanitized = { ...patch };
     if (typeof sanitized.title === 'string') {
@@ -70,8 +76,12 @@ export function buildPersonSections(
     notes: DailyNoteEntity[],
     presence: DailyPresenceEntity[],
     currentPseudo?: string,
+    doneYesterdayNotes: DailyNoteEntity[] = [],
 ): DailyBoardPersonSection[] {
     const pseudos = new Set<string>(notes.map((note) => note.ownerPseudo));
+    for (const note of doneYesterdayNotes) {
+        pseudos.add(note.ownerPseudo);
+    }
     for (const item of presence) {
         pseudos.add(item.pseudo);
     }
@@ -101,7 +111,12 @@ export function buildPersonSections(
                     : 'ABSENT';
 
             const sectionNotes = notes.filter((note) => note.ownerPseudo === pseudo);
+            const historicalDoneNotes = doneYesterdayNotes.filter((note) => note.ownerPseudo === pseudo);
             const workflowNotes = sectionNotes.filter((note) => !isDoneYesterday(note));
+            const doneYesterdayById = new Map([
+                ...sectionNotes.filter((note) => isDoneYesterday(note)),
+                ...historicalDoneNotes,
+            ].map((note) => [note.id, note]));
 
             return {
                 pseudo,
@@ -112,7 +127,7 @@ export function buildPersonSections(
                     [DailyNoteColumn.BLOCKED]: workflowNotes.filter((note) => note.column === DailyNoteColumn.BLOCKED),
                     [DailyNoteColumn.DONE]: workflowNotes.filter((note) => note.column === DailyNoteColumn.DONE),
                 },
-                doneYesterday: sectionNotes.filter((note) => isDoneYesterday(note)),
+                doneYesterday: [...doneYesterdayById.values()],
             };
         });
 

@@ -51,6 +51,14 @@ export default function MainNav({ user, onLogout }: MainNavProps) {
                 >
                     Daily Board
                 </NavLink>
+                <NavLink
+                    to="/stats"
+                    className={({ isActive }) =>
+                        `main-nav__link${isActive ? ' main-nav__link--active' : ''}`
+                    }
+                >
+                    Hall of Gloire
+                </NavLink>
             </nav>
 
             <div className="main-nav__user">

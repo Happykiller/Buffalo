@@ -3,12 +3,12 @@ import { useMutation, useQuery, useSubscription } from '@apollo/client';
 import { useOutletContext } from 'react-router-dom';
 import { GET_DAILY_BOARD } from '../graphql/queries';
 import {
-    CREATE_DAILY_NOTE,
-    DELETE_DAILY_NOTE,
+    CREATE_DAILY_TASK,
+    DELETE_DAILY_TASK,
     HEARTBEAT_DAILY_PRESENCE,
-    RESTORE_DAILY_NOTE,
+    RESTORE_DAILY_TASK,
     UPDATE_DAILY_FOCUS,
-    UPDATE_DAILY_NOTE,
+    UPDATE_DAILY_TASK,
 } from '../graphql/mutations';
 import {
     DAILY_BOARD_UPDATED_SUBSCRIPTION,
@@ -16,16 +16,16 @@ import {
 } from '../graphql/subscriptions';
 import type { UserShellContext } from '../types/user-shell-context';
 
-type NoteColumn = 'TODO' | 'DOING' | 'BLOCKED' | 'DONE';
-type CreateColumn = NoteColumn | 'DONE_YESTERDAY';
+type TaskColumn = 'TODO' | 'DOING' | 'BLOCKED' | 'DONE';
+type CreateColumn = TaskColumn | 'DONE_YESTERDAY';
 type PersonStatus = 'ONLINE' | 'ABSENT' | 'EDITING';
 
-interface DailyNote {
+interface DailyTask {
     id: string;
     boardId: string;
     ownerPseudo: string;
     authorPseudo: string;
-    column: NoteColumn;
+    column: TaskColumn;
     title: string;
     description: string | null;
     label: string | null;
@@ -43,11 +43,11 @@ interface DailyNote {
 interface DailyPerson {
     pseudo: string;
     status: PersonStatus;
-    doneYesterday: DailyNote[];
-    todo: DailyNote[];
-    doing: DailyNote[];
-    blocked: DailyNote[];
-    done: DailyNote[];
+    doneYesterday: DailyTask[];
+    todo: DailyTask[];
+    doing: DailyTask[];
+    blocked: DailyTask[];
+    done: DailyTask[];
 }
 
 interface DailyBoardData {
@@ -59,7 +59,7 @@ interface DailyBoardData {
             createdAt: string;
             updatedAt: string;
         };
-        blockers: DailyNote[];
+        blockers: DailyTask[];
         people: DailyPerson[];
         labels: string[];
         connectedCount: number;
@@ -73,18 +73,18 @@ interface CreateModalState {
 }
 
 interface ToastState {
-    noteId: string;
+    taskId: string;
     label: string;
 }
 
 interface DragState {
-    note: DailyNote;
+    task: DailyTask;
     ownerPseudo: string;
-    column: NoteColumn;
+    column: TaskColumn;
 }
 
 const BOARD_DATE = formatBoardDate(new Date());
-const WORKFLOW_COLUMNS: Array<{ key: NoteColumn; title: string }> = [
+const WORKFLOW_COLUMNS: Array<{ key: TaskColumn; title: string }> = [
     { key: 'TODO', title: 'À faire' },
     { key: 'DOING', title: 'En cours' },
     { key: 'BLOCKED', title: 'Bloqué' },
@@ -101,7 +101,7 @@ export default function DailyBoardPage() {
     const [editingTitleValue, setEditingTitleValue] = useState('');
     const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
     const [toast, setToast] = useState<ToastState | null>(null);
-    const [draggedNote, setDraggedNote] = useState<DragState | null>(null);
+    const [draggedTask, setDraggedTask] = useState<DragState | null>(null);
     const [dropTarget, setDropTarget] = useState<string | null>(null);
 
     const { data, loading, error, refetch } = useQuery<DailyBoardData>(GET_DAILY_BOARD, {
@@ -109,10 +109,10 @@ export default function DailyBoardPage() {
         fetchPolicy: 'cache-and-network',
     });
 
-    const [createNote] = useMutation(CREATE_DAILY_NOTE);
-    const [updateNote] = useMutation(UPDATE_DAILY_NOTE);
-    const [deleteNote] = useMutation(DELETE_DAILY_NOTE);
-    const [restoreNote] = useMutation(RESTORE_DAILY_NOTE);
+    const [createTask] = useMutation(CREATE_DAILY_TASK);
+    const [updateTask] = useMutation(UPDATE_DAILY_TASK);
+    const [deleteTask] = useMutation(DELETE_DAILY_TASK);
+    const [restoreTask] = useMutation(RESTORE_DAILY_TASK);
     const [updateFocus] = useMutation(UPDATE_DAILY_FOCUS);
     const [heartbeatPresence] = useMutation(HEARTBEAT_DAILY_PRESENCE);
 
@@ -157,9 +157,9 @@ export default function DailyBoardPage() {
     if (error) return <div className="daily-board-page"><div className="daily-board-error">Erreur de chargement: {error.message}</div></div>;
     if (!board) return null;
 
-    async function handleCreateNote(values: { title: string; label?: string; ownerPseudo: string; url?: string; description?: string }) {
+    async function handleCreateTask(values: { title: string; label?: string; ownerPseudo: string; url?: string; description?: string }) {
         if (!createModal) return;
-        await createNote({
+        await createTask({
             variables: {
                 input: {
                     boardDate: BOARD_DATE,
@@ -186,49 +186,49 @@ export default function DailyBoardPage() {
         await refetch();
     }
 
-    async function handleInlineTitleSave(noteId: string) {
+    async function handleInlineTitleSave(taskId: string) {
         const title = editingTitleValue.trim();
         if (!title) {
             setEditingTitleId(null);
             return;
         }
-        await updateNote({ variables: { noteId, input: { title } } });
+        await updateTask({ variables: { noteId: taskId, input: { title } } });
         setEditingTitleId(null);
         setEditingSectionId(null);
         await refetch();
     }
 
-    async function handleDelete(note: DailyNote) {
-        await deleteNote({ variables: { noteId: note.id } });
-        setToast({ noteId: note.id, label: note.title });
+    async function handleDelete(task: DailyTask) {
+        await deleteTask({ variables: { noteId: task.id } });
+        setToast({ taskId: task.id, label: task.title });
         await refetch();
     }
 
-    async function handleRestore(noteId: string) {
-        await restoreNote({ variables: { noteId } });
+    async function handleRestore(taskId: string) {
+        await restoreTask({ variables: { noteId: taskId } });
         setToast(null);
         await refetch();
     }
 
-    async function handleDropOnColumn(ownerPseudo: string, column: NoteColumn) {
-        if (!draggedNote) return;
-        if (draggedNote.ownerPseudo === ownerPseudo && draggedNote.column === column) {
-            setDraggedNote(null);
+    async function handleDropOnColumn(ownerPseudo: string, column: TaskColumn) {
+        if (!draggedTask) return;
+        if (draggedTask.ownerPseudo === ownerPseudo && draggedTask.column === column) {
+            setDraggedTask(null);
             setDropTarget(null);
             return;
         }
-        await updateNote({
+        await updateTask({
             variables: {
-                noteId: draggedNote.note.id,
+                noteId: draggedTask.task.id,
                 input: {
                     ownerPseudo,
                     column,
-                    helpNeeded: column === 'BLOCKED' ? draggedNote.note.helpNeeded : null,
-                    unblockAssignedTo: column === 'BLOCKED' ? draggedNote.note.unblockAssignedTo : null,
+                    helpNeeded: column === 'BLOCKED' ? draggedTask.task.helpNeeded : null,
+                    unblockAssignedTo: column === 'BLOCKED' ? draggedTask.task.unblockAssignedTo : null,
                 },
             },
         });
-        setDraggedNote(null);
+        setDraggedTask(null);
         setDropTarget(null);
         await refetch();
     }
@@ -247,7 +247,7 @@ export default function DailyBoardPage() {
                         ))}
                     </div>
                     <span className="saved-pill">Sauvegardé · {relativeSavedAt}</span>
-                    <button type="button" className="ghost-button" onClick={() => setHistoryOpen(true)}>Historique</button>
+                    <button type="button" className="ghost-button" onClick={() => setHistoryOpen(true)}>Daily Meeting</button>
                 </div>
             </section>
 
@@ -282,21 +282,21 @@ export default function DailyBoardPage() {
                 </div>
                 <div className="blockers-list">
                     {board.blockers.length === 0 && <div className="empty-inline">Aucun blocage actif.</div>}
-                    {board.blockers.map((note) => (
-                        <div key={note.id} className="blocker-row">
+                    {board.blockers.map((task) => (
+                        <div key={task.id} className="blocker-row">
                             <div>
-                                <strong>{note.title}</strong>
+                                <strong>{task.title}</strong>
                                 <div className="blocker-meta">
-                                    <span>{note.blockedSince ? `depuis ${formatRelativeTime(note.blockedSince)}` : 'bloqué maintenant'}</span>
-                                    {note.helpNeeded && <span>{note.helpNeeded}</span>}
-                                    {note.url && <a href={note.url} target="_blank" rel="noreferrer">Lien</a>}
+                                    <span>{task.blockedSince ? `depuis ${formatRelativeTime(task.blockedSince)}` : 'bloqué maintenant'}</span>
+                                    {task.helpNeeded && <span>{task.helpNeeded}</span>}
+                                    {task.url && <a href={task.url} target="_blank" rel="noreferrer">Lien</a>}
                                 </div>
                             </div>
                             <button
                                 type="button"
                                 className="danger-ghost-button"
-                                onClick={() => void handleDropOnColumn(note.ownerPseudo, 'DOING')}
-                                disabled={note.ownerPseudo !== user.displayName}
+                                onClick={() => void handleDropOnColumn(task.ownerPseudo, 'DOING')}
+                                disabled={task.ownerPseudo !== user.displayName}
                             >
                                 Déplacer en cours
                             </button>
@@ -326,64 +326,64 @@ export default function DailyBoardPage() {
                         <div className="person-row__grid person-row__grid--five">
                             <section className="person-column person-column--history">
                                 <header className="person-column__header"><h3>Fait hier</h3></header>
-                                <div className="person-column__notes">
-                                    {person.doneYesterday.map((note) => (
-                                        <NoteCard
-                                            key={note.id}
-                                            note={note}
+                                <div className="person-column__tasks">
+                                    {person.doneYesterday.map((task) => (
+                                        <TaskCard
+                                            key={task.id}
+                                            task={task}
                                             labels={board.labels}
                                             isHistorical
-                                            isEditing={editingTitleId === note.id}
+                                            isEditing={editingTitleId === task.id}
                                             editingTitleValue={editingTitleValue}
                                             canEdit={isCurrentUserRow}
                                             onDragEnd={() => {
-                                                setDraggedNote(null);
+                                                setDraggedTask(null);
                                                 setDropTarget(null);
                                             }}
-                                            onDragStart={(note) => {
-                                                setDraggedNote(note ? {
-                                                    note,
+                                            onDragStart={(task) => {
+                                                setDraggedTask(task ? {
+                                                    task,
                                                     ownerPseudo: person.pseudo,
-                                                    column: note.column,
+                                                    column: task.column,
                                                 } : null);
                                                 setDropTarget(null);
                                             }}
                                             onTitleEditStart={() => {
-                                                setEditingTitleId(note.id);
-                                                setEditingTitleValue(note.title);
+                                                setEditingTitleId(task.id);
+                                                setEditingTitleValue(task.title);
                                                 setEditingSectionId(`person:${person.pseudo}`);
                                             }}
                                             onTitleEditChange={setEditingTitleValue}
-                                            onTitleEditSave={() => void handleInlineTitleSave(note.id)}
+                                            onTitleEditSave={() => void handleInlineTitleSave(task.id)}
                                             onTitleEditCancel={() => {
                                                 setEditingTitleId(null);
                                                 setEditingSectionId(null);
                                             }}
                                             onUpdate={async (input) => {
-                                                await updateNote({ variables: { noteId: note.id, input } });
+                                                await updateTask({ variables: { noteId: task.id, input } });
                                                 await refetch();
                                             }}
-                                            onDelete={() => void handleDelete(note)}
+                                            onDelete={() => void handleDelete(task)}
                                         />
                                     ))}
                                 </div>
                                 {isCurrentUserRow && (
                                     <button
                                         type="button"
-                                        className="add-note-button"
+                                        className="add-task-button"
                                         onClick={() => setCreateModal({ pseudo: person.pseudo, column: 'DONE_YESTERDAY' })}
                                     >
-                                        + Ajouter une note…
+                                        + Ajouter une tâche…
                                     </button>
                                 )}
                             </section>
 
                             {WORKFLOW_COLUMNS.map((column) => {
-                                const columnNotes = person[column.key.toLowerCase() as 'todo' | 'doing' | 'blocked' | 'done'];
+                                const columnTasks = person[column.key.toLowerCase() as 'todo' | 'doing' | 'blocked' | 'done'];
                                 const targetKey = `${person.pseudo}:${column.key}`;
                                 const isOriginColumn =
-                                    draggedNote?.ownerPseudo === person.pseudo && draggedNote.column === column.key;
-                                const isDroppable = Boolean(draggedNote && isCurrentUserRow && !isOriginColumn);
+                                    draggedTask?.ownerPseudo === person.pseudo && draggedTask.column === column.key;
+                                const isDroppable = Boolean(draggedTask && isCurrentUserRow && !isOriginColumn);
                                 return (
                                     <section
                                         key={column.key}
@@ -406,54 +406,54 @@ export default function DailyBoardPage() {
                                         }}
                                     >
                                         <header className="person-column__header"><h3>{column.title}</h3></header>
-                                        <div className="person-column__notes">
-                                            {columnNotes.map((note) => (
-                                                <NoteCard
-                                                    key={note.id}
-                                                    note={note}
+                                        <div className="person-column__tasks">
+                                            {columnTasks.map((task) => (
+                                                <TaskCard
+                                                    key={task.id}
+                                                    task={task}
                                                     labels={board.labels}
                                                     isHistorical={false}
-                                                    isEditing={editingTitleId === note.id}
+                                                    isEditing={editingTitleId === task.id}
                                                     editingTitleValue={editingTitleValue}
                                                     canEdit={isCurrentUserRow}
                                                     onDragEnd={() => {
-                                                        setDraggedNote(null);
+                                                        setDraggedTask(null);
                                                         setDropTarget(null);
                                                     }}
-                                                    onDragStart={(note) => {
-                                                        setDraggedNote(note ? {
-                                                            note,
+                                                    onDragStart={(task) => {
+                                                        setDraggedTask(task ? {
+                                                            task,
                                                             ownerPseudo: person.pseudo,
-                                                            column: note.column,
+                                                            column: task.column,
                                                         } : null);
                                                         setDropTarget(null);
                                                     }}
                                                     onTitleEditStart={() => {
-                                                        setEditingTitleId(note.id);
-                                                        setEditingTitleValue(note.title);
+                                                        setEditingTitleId(task.id);
+                                                        setEditingTitleValue(task.title);
                                                         setEditingSectionId(`person:${person.pseudo}`);
                                                     }}
                                                     onTitleEditChange={setEditingTitleValue}
-                                                    onTitleEditSave={() => void handleInlineTitleSave(note.id)}
+                                                    onTitleEditSave={() => void handleInlineTitleSave(task.id)}
                                                     onTitleEditCancel={() => {
                                                         setEditingTitleId(null);
                                                         setEditingSectionId(null);
                                                     }}
                                                     onUpdate={async (input) => {
-                                                        await updateNote({ variables: { noteId: note.id, input } });
+                                                        await updateTask({ variables: { noteId: task.id, input } });
                                                         await refetch();
                                                     }}
-                                                    onDelete={() => void handleDelete(note)}
+                                                    onDelete={() => void handleDelete(task)}
                                                 />
                                             ))}
                                         </div>
                                         {isCurrentUserRow && (
                                             <button
                                                 type="button"
-                                                className="add-note-button"
+                                                className="add-task-button"
                                                 onClick={() => setCreateModal({ pseudo: person.pseudo, column: column.key })}
                                             >
-                                                + Ajouter une note…
+                                                + Ajouter une tâche…
                                             </button>
                                         )}
                                     </section>
@@ -467,7 +467,7 @@ export default function DailyBoardPage() {
             </section>
 
             {createModal && (
-                <CreateNoteModal
+                <CreateTaskModal
                     labels={[...new Set([...LABEL_SWATCHES, ...board.labels].filter(Boolean))]}
                     defaultOwner={createModal.pseudo}
                     currentUser={user.displayName}
@@ -475,7 +475,7 @@ export default function DailyBoardPage() {
                         setCreateModal(null);
                         setEditingSectionId(null);
                     }}
-                    onSubmit={(values) => void handleCreateNote(values)}
+                    onSubmit={(values) => void handleCreateTask(values)}
                 />
             )}
 
@@ -490,22 +490,22 @@ export default function DailyBoardPage() {
 
             {toast && (
                 <div className="daily-toast">
-                    <span>Carte supprimée · {toast.label}</span>
-                    <button type="button" onClick={() => void handleRestore(toast.noteId)}>Annuler</button>
+                    <span>Tâche supprimée · {toast.label}</span>
+                    <button type="button" onClick={() => void handleRestore(toast.taskId)}>Annuler</button>
                 </div>
             )}
         </div>
     );
 }
 
-function NoteCard(props: {
-    note: DailyNote;
+function TaskCard(props: {
+    task: DailyTask;
     labels: string[];
     isHistorical?: boolean;
     isEditing: boolean;
     editingTitleValue: string;
     canEdit: boolean;
-    onDragStart: (note: DailyNote | null) => void;
+    onDragStart: (task: DailyTask | null) => void;
     onDragEnd: () => void;
     onTitleEditStart: () => void;
     onTitleEditChange: (value: string) => void;
@@ -515,22 +515,22 @@ function NoteCard(props: {
     onDelete: () => void;
 }) {
     const [menuOpen, setMenuOpen] = useState(false);
-    const ageState = getNoteAgeState(props.note);
+    const ageState = getTaskAgeState(props.task);
 
     return (
         <div
-            className={`note-card${props.note.column === 'BLOCKED' ? ' note-card--blocker' : ''}${ageState ? ` note-card--${ageState}` : ''}`}
+            className={`task-card${props.task.column === 'BLOCKED' ? ' task-card--blocker' : ''}${ageState ? ` task-card--${ageState}` : ''}`}
             draggable={props.canEdit && !props.isHistorical}
             onDragStart={() => {
                 if (props.canEdit && !props.isHistorical) {
-                    props.onDragStart(props.note);
+                    props.onDragStart(props.task);
                 }
             }}
             onDragEnd={props.onDragEnd}
         >
-            <div className="note-card__top">
+            <div className="task-card__top">
                 {!props.isHistorical && props.canEdit && (
-                    <span className="note-card__drag-grip" title="Glisser-déposer" aria-hidden="true">
+                    <span className="task-card__drag-grip" title="Glisser-déposer" aria-hidden="true">
                         <span />
                         <span />
                         <span />
@@ -541,7 +541,7 @@ function NoteCard(props: {
                 )}
                 {props.isEditing ? (
                     <input
-                        className="note-card__title-input"
+                        className="task-card__title-input"
                         value={props.editingTitleValue}
                         autoFocus
                         onChange={(event) => props.onTitleEditChange(event.target.value)}
@@ -557,43 +557,43 @@ function NoteCard(props: {
                         }}
                     />
                 ) : (
-                    <button type="button" className="note-card__title" onClick={props.canEdit ? props.onTitleEditStart : undefined}>{props.note.title}</button>
+                    <button type="button" className="task-card__title" onClick={props.canEdit ? props.onTitleEditStart : undefined}>{props.task.title}</button>
                 )}
                 {props.canEdit && (
-                    <button type="button" className="note-menu-button" onClick={() => setMenuOpen((value) => !value)}>···</button>
+                    <button type="button" className="task-menu-button" onClick={() => setMenuOpen((value) => !value)}>···</button>
                 )}
             </div>
 
-            <div className="note-card__meta">
-                {props.note.url && <a href={props.note.url} target="_blank" rel="noreferrer">Lien</a>}
+            <div className="task-card__meta">
+                {props.task.url && <a href={props.task.url} target="_blank" rel="noreferrer">Lien</a>}
             </div>
-            {props.note.description && <p className="note-card__description">{props.note.description}</p>}
-            <div className="note-card__footer">
-                <div className="note-card__footer-left">
-                    {props.note.label && <span className="note-chip">{props.note.label}</span>}
+            {props.task.description && <p className="task-card__description">{props.task.description}</p>}
+            <div className="task-card__footer">
+                <div className="task-card__footer-left">
+                    {props.task.label && <span className="task-chip">{props.task.label}</span>}
                 </div>
-                <div className="note-card__info">
-                    <button type="button" className="note-card__info-button" aria-label="Informations de la note">
+                <div className="task-card__info">
+                    <button type="button" className="task-card__info-button" aria-label="Informations de la tâche">
                         i
                     </button>
-                    <div className="note-card__tooltip">
-                        <span>Créée {formatMiniDate(props.note.createdAt)}</span>
-                        <span>Modifiée {formatMiniDate(props.note.updatedAt)}</span>
-                        {props.note.doneAt && <span>Finie {formatMiniDate(props.note.doneAt)}</span>}
+                    <div className="task-card__tooltip">
+                        <span>Créée {formatMiniDate(props.task.createdAt)}</span>
+                        <span>Modifiée {formatMiniDate(props.task.updatedAt)}</span>
+                        {props.task.doneAt && <span>Finie {formatMiniDate(props.task.doneAt)}</span>}
                     </div>
                 </div>
             </div>
 
             {props.canEdit && menuOpen && (
-                <div className="note-menu">
-                    <button type="button" className="note-menu__danger" onClick={props.onDelete}>Supprimer</button>
+                <div className="task-menu">
+                    <button type="button" className="task-menu__danger" onClick={props.onDelete}>Supprimer</button>
                 </div>
             )}
         </div>
     );
 }
 
-function CreateNoteModal(props: {
+function CreateTaskModal(props: {
     labels: string[];
     defaultOwner: string;
     currentUser: string;
@@ -608,8 +608,8 @@ function CreateNoteModal(props: {
 
     return (
         <div className="modal-backdrop" onClick={props.onClose}>
-            <div className="create-note-modal" onClick={(event) => event.stopPropagation()}>
-                <h2>Ajouter une note</h2>
+            <div className="create-task-modal" onClick={(event) => event.stopPropagation()}>
+                <h2>Ajouter une tâche</h2>
                 <input autoFocus value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Titre" />
                 <div className="label-picker">
                     {props.labels.filter(Boolean).map((item) => (
@@ -626,7 +626,6 @@ function CreateNoteModal(props: {
                         Nouveau label
                     </button>
                 </div>
-                <input value={ownerPseudo} readOnly aria-label="Propriétaire" />
                 <input value={url} onChange={(event) => setUrl(event.target.value)} placeholder="Lien optionnel" />
                 <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Description courte" rows={3} />
                 <div className="modal-actions">
@@ -669,11 +668,11 @@ function DailySummaryOverlay(props: {
                         <div className="summary-person-cell">
                             <strong>{person.pseudo}</strong>
                         </div>
-                        <SummaryList notes={person.doneYesterday} />
-                        <SummaryList notes={person.todo} />
-                        <SummaryList notes={person.doing} />
-                        <SummaryList notes={person.blocked} tone="danger" />
-                        <SummaryList notes={person.done} />
+                        <SummaryList tasks={person.doneYesterday} />
+                        <SummaryList tasks={person.todo} />
+                        <SummaryList tasks={person.doing} />
+                        <SummaryList tasks={person.blocked} tone="danger" />
+                        <SummaryList tasks={person.done} />
                     </div>
                 ))}
             </div>
@@ -681,16 +680,20 @@ function DailySummaryOverlay(props: {
     );
 }
 
-function SummaryList(props: { notes: DailyNote[]; tone?: 'danger' }) {
-    if (props.notes.length === 0) {
+function SummaryList(props: { tasks: DailyTask[]; tone?: 'danger' }) {
+    if (props.tasks.length === 0) {
         return <div className="summary-list summary-list--empty">—</div>;
     }
 
     return (
         <div className={`summary-list${props.tone === 'danger' ? ' summary-list--danger' : ''}`}>
-            {props.notes.map((note) => (
-                <div key={note.id} className="summary-note">
-                    {note.title}
+            {props.tasks.map((task) => (
+                <div
+                    key={task.id}
+                    className={`summary-task${getTaskAgeState(task) ? ` summary-task--${getTaskAgeState(task)}` : ''}${task.column === 'BLOCKED' ? ' summary-task--blocker' : ''}`}
+                    title={task.title}
+                >
+                    {task.title}
                 </div>
             ))}
         </div>
@@ -722,12 +725,12 @@ function toYesterdayIso() {
     return date.toISOString();
 }
 
-function getNoteAgeState(note: DailyNote): 'warning' | 'alert' | null {
-    if (note.column !== 'TODO' && note.column !== 'DOING') {
+function getTaskAgeState(task: DailyTask): 'warning' | 'alert' | null {
+    if (task.column !== 'TODO' && task.column !== 'DOING') {
         return null;
     }
 
-    const ageHours = (Date.now() - new Date(note.createdAt).getTime()) / (1000 * 60 * 60);
+    const ageHours = (Date.now() - new Date(task.createdAt).getTime()) / (1000 * 60 * 60);
     if (ageHours >= 48) {
         return 'alert';
     }

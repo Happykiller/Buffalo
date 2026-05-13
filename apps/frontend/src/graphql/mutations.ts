@@ -25,7 +25,7 @@ export const MARK_REQUEST_AS_DONE = gql`
   }
 `;
 
-export const CREATE_DAILY_NOTE = gql`
+export const CREATE_DAILY_TASK = gql`
   mutation CreateDailyNote($input: CreateDailyNoteInput!) {
     createDailyNote(input: $input) {
       id
@@ -33,7 +33,7 @@ export const CREATE_DAILY_NOTE = gql`
   }
 `;
 
-export const UPDATE_DAILY_NOTE = gql`
+export const UPDATE_DAILY_TASK = gql`
   mutation UpdateDailyNote($noteId: String!, $input: UpdateDailyNoteInput!) {
     updateDailyNote(noteId: $noteId, input: $input) {
       id
@@ -41,7 +41,7 @@ export const UPDATE_DAILY_NOTE = gql`
   }
 `;
 
-export const DELETE_DAILY_NOTE = gql`
+export const DELETE_DAILY_TASK = gql`
   mutation DeleteDailyNote($noteId: String!) {
     deleteDailyNote(noteId: $noteId) {
       id
@@ -49,7 +49,7 @@ export const DELETE_DAILY_NOTE = gql`
   }
 `;
 
-export const RESTORE_DAILY_NOTE = gql`
+export const RESTORE_DAILY_TASK = gql`
   mutation RestoreDailyNote($noteId: String!) {
     restoreDailyNote(noteId: $noteId) {
       id
