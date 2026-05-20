@@ -13,6 +13,13 @@ import {
 import { DailyHistoryFilter } from '../domain/daily-history-filter.enum';
 import { DailyNoteColumn } from '../domain/daily-note-column.enum';
 
+function toDateString(date: Date): string {
+    const y = date.getUTCFullYear();
+    const m = `${date.getUTCMonth() + 1}`.padStart(2, '0');
+    const d = `${date.getUTCDate()}`.padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
 class FakeDailyBoardRepository implements DailyBoardRepositoryPort {
     boards = new Map<string, DailyBoardEntity>([
         ['2026-05-12', {
@@ -28,18 +35,11 @@ class FakeDailyBoardRepository implements DailyBoardRepositoryPort {
     presence: DailyPresenceEntity[] = [];
     sequence = 0;
 
-    get board(): DailyBoardEntity {
-        const board = this.boards.get('2026-05-12');
-        assert.ok(board);
-        return board;
-    }
-
     async getOrCreateBoard(date: string): Promise<DailyBoardEntity> {
         const existing = this.boards.get(date);
         if (existing) {
             return existing;
         }
-
         const nextBoard: DailyBoardEntity = {
             id: `board-${this.boards.size + 1}`,
             date,
@@ -58,20 +58,38 @@ class FakeDailyBoardRepository implements DailyBoardRepositoryPort {
         return board;
     }
 
-    async listNotes(boardId: string, includeDeleted = false): Promise<DailyNoteEntity[]> {
-        return this.notes.filter((note) => note.boardId === boardId && (includeDeleted || note.deletedAt === null));
+    async listNotes(date: string): Promise<DailyNoteEntity[]> {
+        return this.notes.filter((note) => {
+            if (note.deletedAt !== null) return false;
+            if (note.column === 'DONE') {
+                return note.doneAt !== null && toDateString(note.doneAt) === date;
+            }
+            return true;
+        });
+    }
+
+    async listRecentlyDoneNotes(beforeDate: string, limit: number): Promise<DailyNoteEntity[]> {
+        const before = new Date(`${beforeDate}T00:00:00.000Z`);
+        return this.notes
+            .filter(
+                (note) =>
+                    note.deletedAt === null &&
+                    note.column === 'DONE' &&
+                    note.doneAt !== null &&
+                    note.doneAt < before,
+            )
+            .sort((a, b) => b.doneAt!.getTime() - a.doneAt!.getTime())
+            .slice(0, limit);
     }
 
     async findNoteById(id: string): Promise<DailyNoteEntity | null> {
         return this.notes.find((note) => note.id === id) ?? null;
     }
 
-    async createNote(boardId: string, data: CreateDailyNoteData): Promise<DailyNoteEntity> {
+    async createNote(data: CreateDailyNoteData): Promise<DailyNoteEntity> {
         const now = data.createdAt ?? new Date('2026-05-12T08:00:00Z');
         const note: DailyNoteEntity = {
             id: `note-${++this.sequence}`,
-            boardId,
-            ownerPseudo: data.ownerPseudo,
             authorPseudo: data.authorPseudo,
             column: data.column,
             title: data.title,
@@ -80,6 +98,7 @@ class FakeDailyBoardRepository implements DailyBoardRepositoryPort {
             url: data.url ?? null,
             done: data.column === DailyNoteColumn.DONE,
             blockedSince: data.column === DailyNoteColumn.BLOCKED ? data.blockedSince ?? new Date('2026-05-12T08:00:00Z') : null,
+            doingSince: data.column === DailyNoteColumn.DOING ? now : null,
             doneAt: data.column === DailyNoteColumn.DONE ? data.doneAt ?? new Date('2026-05-12T08:00:00Z') : null,
             helpNeeded: data.helpNeeded ?? null,
             unblockAssignedTo: data.unblockAssignedTo ?? null,
@@ -93,10 +112,7 @@ class FakeDailyBoardRepository implements DailyBoardRepositoryPort {
 
     async updateNote(id: string, patch: UpdateDailyNoteData): Promise<DailyNoteEntity | null> {
         const note = this.notes.find((item) => item.id === id) ?? null;
-        if (!note) {
-            return null;
-        }
-
+        if (!note) return null;
         Object.assign(note, patch);
         note.updatedAt = new Date('2026-05-12T08:05:00Z');
         return note;
@@ -104,18 +120,14 @@ class FakeDailyBoardRepository implements DailyBoardRepositoryPort {
 
     async softDeleteNote(id: string): Promise<DailyNoteEntity | null> {
         const note = this.notes.find((item) => item.id === id) ?? null;
-        if (!note) {
-            return null;
-        }
+        if (!note) return null;
         note.deletedAt = new Date('2026-05-12T08:06:00Z');
         return note;
     }
 
     async restoreNote(id: string): Promise<DailyNoteEntity | null> {
         const note = this.notes.find((item) => item.id === id) ?? null;
-        if (!note) {
-            return null;
-        }
+        if (!note) return null;
         note.deletedAt = null;
         return note;
     }
@@ -141,7 +153,14 @@ class FakeDailyBoardRepository implements DailyBoardRepositoryPort {
             .filter((board) => (!_from || board.date >= _from) && (!_to || board.date <= _to))
             .map((board) => ({
                 board,
-                notes: this.notes.filter((note) => note.boardId === board.id && note.deletedAt === null),
+                notes: this.notes.filter((note) => {
+                    if (note.deletedAt !== null) return false;
+                    const eventDate =
+                        note.column === 'DONE' && note.doneAt
+                            ? toDateString(note.doneAt)
+                            : toDateString(note.createdAt);
+                    return eventDate === board.date;
+                }),
             }));
     }
 }
@@ -151,7 +170,6 @@ test('createNote trims title and sets blocker metadata', async () => {
     const service = new DailyBoardService(repository);
 
     const note = await service.createNote('2026-05-12', {
-        ownerPseudo: 'Alice',
         authorPseudo: 'Alice',
         column: DailyNoteColumn.BLOCKED,
         title: '  Incident prod  ',
@@ -162,11 +180,10 @@ test('createNote trims title and sets blocker metadata', async () => {
     assert.ok(note.blockedSince instanceof Date);
 });
 
-test('updateNote switches done flag when moved to done yesterday', async () => {
+test('updateNote switches done flag when moved to DONE', async () => {
     const repository = new FakeDailyBoardRepository();
     const service = new DailyBoardService(repository);
-    const note = await repository.createNote(repository.board.id, {
-        ownerPseudo: 'Alice',
+    const note = await repository.createNote({
         authorPseudo: 'Alice',
         column: DailyNoteColumn.TODO,
         title: 'Préparer release',
@@ -184,9 +201,8 @@ test('updateNote switches done flag when moved to done yesterday', async () => {
 test('deleteNote and restoreNote keep soft delete semantics', async () => {
     const repository = new FakeDailyBoardRepository();
     const service = new DailyBoardService(repository);
-    const note = await repository.createNote(repository.board.id, {
-        ownerPseudo: 'Alice',
-        authorPseudo: 'Bob',
+    const note = await repository.createNote({
+        authorPseudo: 'Alice',
         column: DailyNoteColumn.DOING,
         title: 'Refonte API',
     });
@@ -198,35 +214,35 @@ test('deleteNote and restoreNote keep soft delete semantics', async () => {
     assert.equal(restored.deletedAt, null);
 });
 
-test('getBoard carries over unfinished notes and exposes yesterday done notes', async () => {
+test('getBoard shows active notes for any date and yesterday done notes', async () => {
     const repository = new FakeDailyBoardRepository();
     const service = new DailyBoardService(repository);
 
-    await repository.createNote(repository.board.id, {
-        ownerPseudo: 'Alice',
+    await repository.createNote({
         authorPseudo: 'Alice',
         column: DailyNoteColumn.TODO,
         title: 'Préparer release',
+        createdAt: new Date('2026-05-12T08:00:00Z'),
     });
-    await repository.createNote(repository.board.id, {
-        ownerPseudo: 'Alice',
+    await repository.createNote({
         authorPseudo: 'Alice',
         column: DailyNoteColumn.DOING,
         title: 'Refonte API',
+        createdAt: new Date('2026-05-12T08:00:00Z'),
     });
-    await repository.createNote(repository.board.id, {
-        ownerPseudo: 'Alice',
+    await repository.createNote({
         authorPseudo: 'Alice',
         column: DailyNoteColumn.BLOCKED,
         title: 'Attendre validation',
         blockedSince: new Date('2026-05-12T08:00:00Z'),
+        createdAt: new Date('2026-05-12T08:00:00Z'),
     });
-    await repository.createNote(repository.board.id, {
-        ownerPseudo: 'Alice',
+    await repository.createNote({
         authorPseudo: 'Alice',
         column: DailyNoteColumn.DONE,
         title: 'Fix auth',
         doneAt: new Date('2026-05-12T08:00:00Z'),
+        createdAt: new Date('2026-05-12T08:00:00Z'),
     });
 
     const board = await service.getBoard('2026-05-13', 'Alice');
@@ -237,56 +253,52 @@ test('getBoard carries over unfinished notes and exposes yesterday done notes', 
     assert.deepEqual(alice.doing.map((note) => note.title), ['Refonte API']);
     assert.deepEqual(alice.blocked.map((note) => note.title), ['Attendre validation']);
     assert.deepEqual(alice.done.map((note) => note.title), []);
-    assert.deepEqual(alice.doneYesterday.map((note) => note.title), ['Fix auth']);
+    assert.deepEqual(alice.donePreviously.map((note) => note.title), ['Fix auth']);
 });
 
-test('getBoard does not duplicate a carried note after it moved columns', async () => {
+test('getBoard reflects column change immediately', async () => {
     const repository = new FakeDailyBoardRepository();
     const service = new DailyBoardService(repository);
 
-    await repository.createNote(repository.board.id, {
-        ownerPseudo: 'Alice',
+    await repository.createNote({
         authorPseudo: 'Alice',
         column: DailyNoteColumn.TODO,
         title: 'Préparer release',
     });
 
     const firstLoad = await service.getBoard('2026-05-13', 'Alice');
-    const carried = firstLoad.people.find((person) => person.pseudo === 'Alice')?.todo[0];
-    assert.ok(carried);
+    const note = firstLoad.people.find((person) => person.pseudo === 'Alice')?.todo[0];
+    assert.ok(note);
 
-    await service.updateNote(carried.id, {
-        column: DailyNoteColumn.DOING,
-    });
+    await service.updateNote(note.id, { column: DailyNoteColumn.DOING });
 
     const secondLoad = await service.getBoard('2026-05-13', 'Alice');
     const alice = secondLoad.people.find((person) => person.pseudo === 'Alice');
 
     assert.ok(alice);
-    assert.deepEqual(alice.todo.map((note) => note.title), []);
-    assert.deepEqual(alice.doing.map((note) => note.title), ['Préparer release']);
+    assert.deepEqual(alice.todo.map((n) => n.title), []);
+    assert.deepEqual(alice.doing.map((n) => n.title), ['Préparer release']);
 });
 
-test('getBoard does not recreate a carried note deleted from current board', async () => {
+test('deleted note does not reappear on next board load', async () => {
     const repository = new FakeDailyBoardRepository();
     const service = new DailyBoardService(repository);
 
-    await repository.createNote(repository.board.id, {
-        ownerPseudo: 'Alice',
+    await repository.createNote({
         authorPseudo: 'Alice',
         column: DailyNoteColumn.TODO,
         title: 'Préparer release',
     });
 
     const firstLoad = await service.getBoard('2026-05-13', 'Alice');
-    const carried = firstLoad.people.find((person) => person.pseudo === 'Alice')?.todo[0];
-    assert.ok(carried);
+    const note = firstLoad.people.find((person) => person.pseudo === 'Alice')?.todo[0];
+    assert.ok(note);
 
-    await service.deleteNote(carried.id);
+    await service.deleteNote(note.id);
 
     const secondLoad = await service.getBoard('2026-05-13', 'Alice');
     const alice = secondLoad.people.find((person) => person.pseudo === 'Alice');
 
     assert.ok(alice);
-    assert.deepEqual(alice.todo.map((note) => note.title), []);
+    assert.deepEqual(alice.todo.map((n) => n.title), []);
 });

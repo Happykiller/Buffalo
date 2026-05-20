@@ -12,7 +12,7 @@ export interface DailyBoardPersonSection {
     pseudo: string;
     status: 'ONLINE' | 'ABSENT' | 'EDITING';
     notes: Record<DailyNoteColumn, DailyNoteEntity[]>;
-    doneYesterday: DailyNoteEntity[];
+    donePreviously: DailyNoteEntity[];
 }
 
 export interface DailyHistoryEvent {
@@ -61,6 +61,12 @@ export function sanitizeNotePatch(patch: UpdateDailyNoteData): UpdateDailyNoteDa
         sanitized.helpNeeded = sanitized.helpNeeded ?? null;
         sanitized.unblockAssignedTo = sanitized.unblockAssignedTo ?? null;
     }
+    if (sanitized.column === DailyNoteColumn.DOING && sanitized.doingSince === undefined) {
+        sanitized.doingSince = new Date();
+    }
+    if (sanitized.column && sanitized.column !== DailyNoteColumn.DOING) {
+        sanitized.doingSince = null;
+    }
     if (sanitized.column === DailyNoteColumn.DONE && sanitized.done === undefined) {
         sanitized.done = true;
         sanitized.doneAt = sanitized.doneAt ?? new Date();
@@ -76,11 +82,11 @@ export function buildPersonSections(
     notes: DailyNoteEntity[],
     presence: DailyPresenceEntity[],
     currentPseudo?: string,
-    doneYesterdayNotes: DailyNoteEntity[] = [],
+    previouslyDoneNotes: DailyNoteEntity[] = [],
 ): DailyBoardPersonSection[] {
-    const pseudos = new Set<string>(notes.map((note) => note.ownerPseudo));
-    for (const note of doneYesterdayNotes) {
-        pseudos.add(note.ownerPseudo);
+    const pseudos = new Set<string>(notes.map((note) => note.authorPseudo));
+    for (const note of previouslyDoneNotes) {
+        pseudos.add(note.authorPseudo);
     }
     for (const item of presence) {
         pseudos.add(item.pseudo);
@@ -93,12 +99,8 @@ export function buildPersonSections(
     const sections = [...pseudos]
         .sort((a, b) => {
             if (currentPseudo) {
-                if (a === currentPseudo && b !== currentPseudo) {
-                    return -1;
-                }
-                if (b === currentPseudo && a !== currentPseudo) {
-                    return 1;
-                }
+                if (a === currentPseudo && b !== currentPseudo) return -1;
+                if (b === currentPseudo && a !== currentPseudo) return 1;
             }
             return a.localeCompare(b, 'fr');
         })
@@ -110,24 +112,18 @@ export function buildPersonSections(
                     ? 'ONLINE'
                     : 'ABSENT';
 
-            const sectionNotes = notes.filter((note) => note.ownerPseudo === pseudo);
-            const historicalDoneNotes = doneYesterdayNotes.filter((note) => note.ownerPseudo === pseudo);
-            const workflowNotes = sectionNotes.filter((note) => !isDoneYesterday(note));
-            const doneYesterdayById = new Map([
-                ...sectionNotes.filter((note) => isDoneYesterday(note)),
-                ...historicalDoneNotes,
-            ].map((note) => [note.id, note]));
+            const sectionNotes = notes.filter((note) => note.authorPseudo === pseudo);
 
             return {
                 pseudo,
                 status,
                 notes: {
-                    [DailyNoteColumn.TODO]: workflowNotes.filter((note) => note.column === DailyNoteColumn.TODO),
-                    [DailyNoteColumn.DOING]: workflowNotes.filter((note) => note.column === DailyNoteColumn.DOING),
-                    [DailyNoteColumn.BLOCKED]: workflowNotes.filter((note) => note.column === DailyNoteColumn.BLOCKED),
-                    [DailyNoteColumn.DONE]: workflowNotes.filter((note) => note.column === DailyNoteColumn.DONE),
+                    [DailyNoteColumn.TODO]: sectionNotes.filter((note) => note.column === DailyNoteColumn.TODO),
+                    [DailyNoteColumn.DOING]: sectionNotes.filter((note) => note.column === DailyNoteColumn.DOING),
+                    [DailyNoteColumn.BLOCKED]: sectionNotes.filter((note) => note.column === DailyNoteColumn.BLOCKED),
+                    [DailyNoteColumn.DONE]: sectionNotes.filter((note) => note.column === DailyNoteColumn.DONE),
                 },
-                doneYesterday: [...doneYesterdayById.values()],
+                donePreviously: previouslyDoneNotes.filter((note) => note.authorPseudo === pseudo),
             };
         });
 
@@ -144,7 +140,7 @@ export function buildHistoryGroups(
             .filter((note) => matchesHistoryFilter(note, filter))
             .map((note) => ({
                 id: note.id,
-                pseudo: note.ownerPseudo,
+                pseudo: note.authorPseudo,
                 kind: classifyHistoryKind(note),
                 title: note.title,
                 label: note.label,
@@ -196,15 +192,3 @@ function classifyHistoryKind(note: DailyNoteEntity): DailyHistoryEvent['kind'] {
     return 'NOTE';
 }
 
-function isDoneYesterday(note: DailyNoteEntity) {
-    if (note.column !== DailyNoteColumn.DONE || !note.doneAt) {
-        return false;
-    }
-
-    const now = new Date();
-    const yesterday = new Date(now);
-    yesterday.setDate(now.getDate() - 1);
-    return note.doneAt.getFullYear() === yesterday.getFullYear()
-        && note.doneAt.getMonth() === yesterday.getMonth()
-        && note.doneAt.getDate() === yesterday.getDate();
-}

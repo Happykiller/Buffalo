@@ -7,12 +7,6 @@ export class DailyNoteType {
     id!: string;
 
     @Field()
-    boardId!: string;
-
-    @Field()
-    ownerPseudo!: string;
-
-    @Field()
     authorPseudo!: string;
 
     @Field(() => DailyNoteColumn)
@@ -35,6 +29,9 @@ export class DailyNoteType {
 
     @Field(() => Date, { nullable: true })
     blockedSince!: Date | null;
+
+    @Field(() => Date, { nullable: true })
+    doingSince!: Date | null;
 
     @Field(() => Date, { nullable: true })
     doneAt!: Date | null;

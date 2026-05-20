@@ -11,8 +11,6 @@ export interface DailyBoardEntity {
 
 export interface DailyNoteEntity {
     id: string;
-    boardId: string;
-    ownerPseudo: string;
     authorPseudo: string;
     column: DailyNoteColumn;
     title: string;
@@ -21,6 +19,7 @@ export interface DailyNoteEntity {
     url: string | null;
     done: boolean;
     blockedSince: Date | null;
+    doingSince: Date | null;
     doneAt: Date | null;
     helpNeeded: string | null;
     unblockAssignedTo: string | null;
@@ -38,7 +37,6 @@ export interface DailyPresenceEntity {
 }
 
 export interface CreateDailyNoteData {
-    ownerPseudo: string;
     authorPseudo: string;
     column: DailyNoteColumn;
     title: string;
@@ -53,7 +51,7 @@ export interface CreateDailyNoteData {
 }
 
 export interface UpdateDailyNoteData {
-    ownerPseudo?: string;
+    authorPseudo?: string;
     column?: DailyNoteColumn;
     title?: string;
     description?: string | null;
@@ -61,6 +59,7 @@ export interface UpdateDailyNoteData {
     url?: string | null;
     done?: boolean;
     blockedSince?: Date | null;
+    doingSince?: Date | null;
     doneAt?: Date | null;
     helpNeeded?: string | null;
     unblockAssignedTo?: string | null;
@@ -74,9 +73,10 @@ export interface DailyHistoryEntry {
 export interface DailyBoardRepositoryPort {
     getOrCreateBoard(date: string): Promise<DailyBoardEntity>;
     updateBoardFocus(date: string, focus: string): Promise<DailyBoardEntity>;
-    listNotes(boardId: string, includeDeleted?: boolean): Promise<DailyNoteEntity[]>;
+    listNotes(date: string): Promise<DailyNoteEntity[]>;
+    listRecentlyDoneNotes(beforeDate: string, limit: number): Promise<DailyNoteEntity[]>;
     findNoteById(id: string): Promise<DailyNoteEntity | null>;
-    createNote(boardId: string, data: CreateDailyNoteData): Promise<DailyNoteEntity>;
+    createNote(data: CreateDailyNoteData): Promise<DailyNoteEntity>;
     updateNote(id: string, patch: UpdateDailyNoteData): Promise<DailyNoteEntity | null>;
     softDeleteNote(id: string): Promise<DailyNoteEntity | null>;
     restoreNote(id: string): Promise<DailyNoteEntity | null>;

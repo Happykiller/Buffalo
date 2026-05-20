@@ -4,12 +4,6 @@ import { Document } from 'mongoose';
 @Schema({ collection: 'dailyNotes', timestamps: false })
 export class DailyNoteDocument extends Document {
     @Prop({ required: true, index: true })
-    boardId!: string;
-
-    @Prop({ required: true, index: true })
-    ownerPseudo!: string;
-
-    @Prop({ required: true })
     authorPseudo!: string;
 
     @Prop({ required: true, index: true })
@@ -32,6 +26,9 @@ export class DailyNoteDocument extends Document {
 
     @Prop({ type: Date, default: null })
     blockedSince!: Date | null;
+
+    @Prop({ type: Date, default: null })
+    doingSince!: Date | null;
 
     @Prop({ type: Date, default: null })
     doneAt!: Date | null;

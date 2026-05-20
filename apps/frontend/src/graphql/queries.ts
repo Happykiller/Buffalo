@@ -90,8 +90,6 @@ export const GET_DAILY_BOARD = gql`
       }
       blockers {
         id
-        boardId
-        ownerPseudo
         authorPseudo
         column
         title
@@ -100,6 +98,7 @@ export const GET_DAILY_BOARD = gql`
         url
         done
         blockedSince
+        doingSince
         doneAt
         helpNeeded
         unblockAssignedTo
@@ -110,10 +109,8 @@ export const GET_DAILY_BOARD = gql`
       people {
         pseudo
         status
-        doneYesterday {
+        donePreviously {
           id
-          boardId
-          ownerPseudo
           authorPseudo
           column
           title
@@ -131,8 +128,6 @@ export const GET_DAILY_BOARD = gql`
         }
         todo {
           id
-          boardId
-          ownerPseudo
           authorPseudo
           column
           title
@@ -150,8 +145,6 @@ export const GET_DAILY_BOARD = gql`
         }
         doing {
           id
-          boardId
-          ownerPseudo
           authorPseudo
           column
           title
@@ -169,8 +162,6 @@ export const GET_DAILY_BOARD = gql`
         }
         blocked {
           id
-          boardId
-          ownerPseudo
           authorPseudo
           column
           title
@@ -188,8 +179,6 @@ export const GET_DAILY_BOARD = gql`
         }
         done {
           id
-          boardId
-          ownerPseudo
           authorPseudo
           column
           title
@@ -208,7 +197,6 @@ export const GET_DAILY_BOARD = gql`
       }
       presence {
         id
-        boardId
         pseudo
         lastSeenAt
         editingSectionId

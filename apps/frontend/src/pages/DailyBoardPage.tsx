@@ -22,8 +22,7 @@ type PersonStatus = 'ONLINE' | 'ABSENT' | 'EDITING';
 
 interface DailyTask {
     id: string;
-    boardId: string;
-    ownerPseudo: string;
+    authorPseudo: string;
     authorPseudo: string;
     column: TaskColumn;
     title: string;
@@ -32,6 +31,7 @@ interface DailyTask {
     url: string | null;
     done: boolean;
     blockedSince: string | null;
+    doingSince: string | null;
     doneAt: string | null;
     helpNeeded: string | null;
     unblockAssignedTo: string | null;
@@ -43,7 +43,7 @@ interface DailyTask {
 interface DailyPerson {
     pseudo: string;
     status: PersonStatus;
-    doneYesterday: DailyTask[];
+    donePreviously: DailyTask[];
     todo: DailyTask[];
     doing: DailyTask[];
     blocked: DailyTask[];
@@ -79,7 +79,7 @@ interface ToastState {
 
 interface DragState {
     task: DailyTask;
-    ownerPseudo: string;
+    authorPseudo: string;
     column: TaskColumn;
 }
 
@@ -103,6 +103,7 @@ export default function DailyBoardPage() {
     const [toast, setToast] = useState<ToastState | null>(null);
     const [draggedTask, setDraggedTask] = useState<DragState | null>(null);
     const [dropTarget, setDropTarget] = useState<string | null>(null);
+    const [hiddenPseudos, setHiddenPseudos] = useState<Set<string>>(new Set());
 
     const { data, loading, error, refetch } = useQuery<DailyBoardData>(GET_DAILY_BOARD, {
         variables: { date: BOARD_DATE, currentPseudo: user.displayName },
@@ -157,13 +158,13 @@ export default function DailyBoardPage() {
     if (error) return <div className="daily-board-page"><div className="daily-board-error">Erreur de chargement: {error.message}</div></div>;
     if (!board) return null;
 
-    async function handleCreateTask(values: { title: string; label?: string; ownerPseudo: string; url?: string; description?: string }) {
+    async function handleCreateTask(values: { title: string; label?: string; authorPseudo: string; url?: string; description?: string }) {
         if (!createModal) return;
         await createTask({
             variables: {
                 input: {
                     boardDate: BOARD_DATE,
-                    ownerPseudo: values.ownerPseudo,
+                    authorPseudo: values.authorPseudo,
                     authorPseudo: user.displayName,
                     column: createModal.column === 'DONE_YESTERDAY' ? 'DONE' : createModal.column,
                     title: values.title,
@@ -210,9 +211,9 @@ export default function DailyBoardPage() {
         await refetch();
     }
 
-    async function handleDropOnColumn(ownerPseudo: string, column: TaskColumn) {
+    async function handleDropOnColumn(authorPseudo: string, column: TaskColumn) {
         if (!draggedTask) return;
-        if (draggedTask.ownerPseudo === ownerPseudo && draggedTask.column === column) {
+        if (draggedTask.authorPseudo === authorPseudo && draggedTask.column === column) {
             setDraggedTask(null);
             setDropTarget(null);
             return;
@@ -221,7 +222,6 @@ export default function DailyBoardPage() {
             variables: {
                 noteId: draggedTask.task.id,
                 input: {
-                    ownerPseudo,
                     column,
                     helpNeeded: column === 'BLOCKED' ? draggedTask.task.helpNeeded : null,
                     unblockAssignedTo: column === 'BLOCKED' ? draggedTask.task.unblockAssignedTo : null,
@@ -295,8 +295,8 @@ export default function DailyBoardPage() {
                             <button
                                 type="button"
                                 className="danger-ghost-button"
-                                onClick={() => void handleDropOnColumn(task.ownerPseudo, 'DOING')}
-                                disabled={task.ownerPseudo !== user.displayName}
+                                onClick={() => void handleDropOnColumn(task.authorPseudo, 'DOING')}
+                                disabled={task.authorPseudo !== user.displayName}
                             >
                                 Déplacer en cours
                             </button>
@@ -306,7 +306,19 @@ export default function DailyBoardPage() {
             </section>
 
             <section className="people-board">
-                {board.people.map((person) => (
+                {hiddenPseudos.size > 0 && (
+                    <div className="hidden-people-bar">
+                        <span>{hiddenPseudos.size} absent{hiddenPseudos.size > 1 ? 's' : ''} masqué{hiddenPseudos.size > 1 ? 's' : ''}</span>
+                        <button
+                            type="button"
+                            className="ghost-button"
+                            onClick={() => setHiddenPseudos(new Set())}
+                        >
+                            Afficher tous
+                        </button>
+                    </div>
+                )}
+                {board.people.filter((p) => !hiddenPseudos.has(p.pseudo)).map((person) => (
                     <article key={person.pseudo} className="person-row">
                         <div className="person-row__header">
                             <div className="person-row__identity">
@@ -318,6 +330,16 @@ export default function DailyBoardPage() {
                                     </span>
                                 </div>
                             </div>
+                            {person.status === 'ABSENT' && (
+                                <button
+                                    type="button"
+                                    className="hide-person-button"
+                                    title={`Masquer ${person.pseudo}`}
+                                    onClick={() => setHiddenPseudos((prev) => new Set([...prev, person.pseudo]))}
+                                >
+                                    ×
+                                </button>
+                            )}
                         </div>
 
                         {(() => {
@@ -325,9 +347,9 @@ export default function DailyBoardPage() {
                             return (
                         <div className="person-row__grid person-row__grid--five">
                             <section className="person-column person-column--history">
-                                <header className="person-column__header"><h3>Fait hier</h3></header>
+                                <header className="person-column__header"><h3>Fait précédemment</h3></header>
                                 <div className="person-column__tasks">
-                                    {person.doneYesterday.map((task) => (
+                                    {person.donePreviously.map((task) => (
                                         <TaskCard
                                             key={task.id}
                                             task={task}
@@ -343,7 +365,7 @@ export default function DailyBoardPage() {
                                             onDragStart={(task) => {
                                                 setDraggedTask(task ? {
                                                     task,
-                                                    ownerPseudo: person.pseudo,
+                                                    authorPseudo: person.pseudo,
                                                     column: task.column,
                                                 } : null);
                                                 setDropTarget(null);
@@ -382,7 +404,7 @@ export default function DailyBoardPage() {
                                 const columnTasks = person[column.key.toLowerCase() as 'todo' | 'doing' | 'blocked' | 'done'];
                                 const targetKey = `${person.pseudo}:${column.key}`;
                                 const isOriginColumn =
-                                    draggedTask?.ownerPseudo === person.pseudo && draggedTask.column === column.key;
+                                    draggedTask?.authorPseudo === person.pseudo && draggedTask.column === column.key;
                                 const isDroppable = Boolean(draggedTask && isCurrentUserRow && !isOriginColumn);
                                 return (
                                     <section
@@ -423,7 +445,7 @@ export default function DailyBoardPage() {
                                                     onDragStart={(task) => {
                                                         setDraggedTask(task ? {
                                                             task,
-                                                            ownerPseudo: person.pseudo,
+                                                            authorPseudo: person.pseudo,
                                                             column: task.column,
                                                         } : null);
                                                         setDropTarget(null);
@@ -483,7 +505,7 @@ export default function DailyBoardPage() {
                 <DailySummaryOverlay
                     boardDate={board.board.date}
                     focus={board.board.focus}
-                    people={board.people}
+                    people={board.people.filter((p) => !hiddenPseudos.has(p.pseudo))}
                     onClose={() => setHistoryOpen(false)}
                 />
             )}
@@ -598,11 +620,11 @@ function CreateTaskModal(props: {
     defaultOwner: string;
     currentUser: string;
     onClose: () => void;
-    onSubmit: (values: { title: string; label?: string; ownerPseudo: string; url?: string; description?: string }) => void;
+    onSubmit: (values: { title: string; label?: string; authorPseudo: string; url?: string; description?: string }) => void;
 }) {
     const [title, setTitle] = useState('');
     const [label, setLabel] = useState('');
-    const ownerPseudo = props.defaultOwner || props.currentUser;
+    const authorPseudo = props.defaultOwner || props.currentUser;
     const [url, setUrl] = useState('');
     const [description, setDescription] = useState('');
 
@@ -630,7 +652,7 @@ function CreateTaskModal(props: {
                 <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Description courte" rows={3} />
                 <div className="modal-actions">
                     <button type="button" className="ghost-button" onClick={props.onClose}>Annuler</button>
-                    <button type="button" className="primary-button" onClick={() => props.onSubmit({ title, label, ownerPseudo, url, description })} disabled={!title.trim()}>
+                    <button type="button" className="primary-button" onClick={() => props.onSubmit({ title, label, authorPseudo, url, description })} disabled={!title.trim()}>
                         ✓ Ajouter
                     </button>
                 </div>
@@ -645,6 +667,10 @@ function DailySummaryOverlay(props: {
     people: DailyPerson[];
     onClose: () => void;
 }) {
+    const [hiddenPseudos, setHiddenPseudos] = useState<Set<string>>(new Set());
+    const visible = props.people.filter((p) => !hiddenPseudos.has(p.pseudo));
+    const hiddenCount = hiddenPseudos.size;
+
     return (
         <aside className="summary-overlay">
             <div className="summary-overlay__header">
@@ -652,23 +678,42 @@ function DailySummaryOverlay(props: {
                     <h2>{formatHeaderDate(props.boardDate)}</h2>
                     {props.focus && <p>{props.focus}</p>}
                 </div>
-                <button type="button" className="ghost-button" onClick={props.onClose}>Fermer</button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {hiddenCount > 0 && (
+                        <button
+                            type="button"
+                            className="ghost-button"
+                            onClick={() => setHiddenPseudos(new Set())}
+                        >
+                            {hiddenCount} masqué{hiddenCount > 1 ? 's' : ''} · Afficher tous
+                        </button>
+                    )}
+                    <button type="button" className="ghost-button" onClick={props.onClose}>Fermer</button>
+                </div>
             </div>
             <div className="summary-grid summary-grid--header">
                 <div>Personne</div>
-                <div>Fait hier</div>
+                <div>Fait précédemment</div>
                 <div>À faire</div>
                 <div>En cours</div>
                 <div>Bloqué</div>
                 <div>Done</div>
             </div>
             <div className="summary-grid-body">
-                {props.people.map((person) => (
+                {visible.map((person) => (
                     <div key={person.pseudo} className="summary-grid">
-                        <div className="summary-person-cell">
+                        <div className="summary-person-cell summary-person-cell--interactive">
                             <strong>{person.pseudo}</strong>
+                            <button
+                                type="button"
+                                className="summary-hide-button"
+                                title={`Masquer ${person.pseudo}`}
+                                onClick={() => setHiddenPseudos((prev) => new Set([...prev, person.pseudo]))}
+                            >
+                                ×
+                            </button>
                         </div>
-                        <SummaryList tasks={person.doneYesterday} />
+                        <SummaryList tasks={person.donePreviously} />
                         <SummaryList tasks={person.todo} />
                         <SummaryList tasks={person.doing} />
                         <SummaryList tasks={person.blocked} tone="danger" />
@@ -730,7 +775,11 @@ function getTaskAgeState(task: DailyTask): 'warning' | 'alert' | null {
         return null;
     }
 
-    const ageHours = (Date.now() - new Date(task.createdAt).getTime()) / (1000 * 60 * 60);
+    const startTime = task.column === 'DOING'
+        ? new Date(task.doingSince ?? task.createdAt).getTime()
+        : new Date(task.createdAt).getTime();
+
+    const ageHours = (Date.now() - startTime) / (1000 * 60 * 60);
     if (ageHours >= 48) {
         return 'alert';
     }

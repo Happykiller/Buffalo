@@ -59,13 +59,27 @@ export class DailyBoardRepositoryAdapter implements DailyBoardRepositoryPort {
         return this.toBoardEntity(doc);
     }
 
-    async listNotes(boardId: string, includeDeleted = false): Promise<DailyNoteEntity[]> {
-        const query: FilterQuery<DailyNoteDocument> = { boardId };
-        if (!includeDeleted) {
-            query.deletedAt = null;
-        }
+    async listNotes(date: string): Promise<DailyNoteEntity[]> {
+        const [activeDocs, doneDocs] = await Promise.all([
+            this.noteModel
+                .find({ deletedAt: null, column: { $in: ['TODO', 'DOING', 'BLOCKED'] } })
+                .sort({ authorPseudo: 1, createdAt: 1 })
+                .exec(),
+            this.noteModel
+                .find({ deletedAt: null, column: 'DONE', doneAt: this.dateRangeFilter(date) })
+                .sort({ authorPseudo: 1, createdAt: 1 })
+                .exec(),
+        ]);
 
-        const docs = await this.noteModel.find(query).sort({ ownerPseudo: 1, createdAt: 1 }).exec();
+        return [...activeDocs, ...doneDocs].map((doc) => this.toNoteEntity(doc));
+    }
+
+    async listRecentlyDoneNotes(beforeDate: string, limit: number): Promise<DailyNoteEntity[]> {
+        const docs = await this.noteModel
+            .find({ deletedAt: null, column: 'DONE', doneAt: { $lt: new Date(`${beforeDate}T00:00:00.000Z`) } })
+            .sort({ doneAt: -1 })
+            .limit(limit)
+            .exec();
         return docs.map((doc) => this.toNoteEntity(doc));
     }
 
@@ -74,11 +88,9 @@ export class DailyBoardRepositoryAdapter implements DailyBoardRepositoryPort {
         return doc ? this.toNoteEntity(doc) : null;
     }
 
-    async createNote(boardId: string, data: CreateDailyNoteData): Promise<DailyNoteEntity> {
+    async createNote(data: CreateDailyNoteData): Promise<DailyNoteEntity> {
         const now = data.createdAt ?? new Date();
         const doc = await this.noteModel.create({
-            boardId,
-            ownerPseudo: data.ownerPseudo,
             authorPseudo: data.authorPseudo,
             column: data.column,
             title: data.title,
@@ -87,6 +99,7 @@ export class DailyBoardRepositoryAdapter implements DailyBoardRepositoryPort {
             url: data.url ?? null,
             done: data.column === 'DONE',
             blockedSince: data.column === 'BLOCKED' ? data.blockedSince ?? now : null,
+            doingSince: data.column === 'DOING' ? now : null,
             doneAt: data.column === 'DONE' ? data.doneAt ?? now : null,
             helpNeeded: data.helpNeeded ?? null,
             unblockAssignedTo: data.unblockAssignedTo ?? null,
@@ -111,6 +124,7 @@ export class DailyBoardRepositoryAdapter implements DailyBoardRepositoryPort {
         }
         if (patch.column) {
             update.blockedSince = patch.column === 'BLOCKED' ? patch.blockedSince ?? new Date() : null;
+            update.doingSince = patch.column === 'DOING' ? patch.doingSince ?? new Date() : null;
             update.doneAt = patch.column === 'DONE' ? patch.doneAt ?? new Date() : null;
         }
 
@@ -177,26 +191,64 @@ export class DailyBoardRepositoryAdapter implements DailyBoardRepositoryPort {
             return [];
         }
 
-        const boardIds = boards.map((board) => board._id.toString());
-        const notes = await this.noteModel
-            .find({ boardId: { $in: boardIds }, deletedAt: null })
-            .sort({ createdAt: -1 })
-            .exec();
+        const boardDates = boards.map((b) => b.date);
 
-        const filteredNotes = notes.filter((note) => this.matchesHistoryFilter(this.toNoteEntity(note), filter));
-        const notesByBoardId = new Map<string, DailyNoteEntity[]>();
-        for (const note of filteredNotes) {
-            const boardNotes = notesByBoardId.get(note.boardId) ?? [];
-            boardNotes.push(this.toNoteEntity(note));
-            notesByBoardId.set(note.boardId, boardNotes);
+        // For each board date, fetch notes whose "event date" matches.
+        // DONE notes are keyed by doneAt date; others by createdAt date.
+        const [doneDocs, activeDocs] = await Promise.all([
+            this.noteModel
+                .find({ deletedAt: null, column: 'DONE', doneAt: { $in: boardDates.map((d) => this.dateRangeFilter(d)) } })
+                .sort({ doneAt: -1 })
+                .exec(),
+            filter === DailyHistoryFilter.ALL || filter === DailyHistoryFilter.BLOCKERS || filter === DailyHistoryFilter.DECISIONS
+                ? this.noteModel
+                    .find({
+                        deletedAt: null,
+                        column: { $ne: 'DONE' },
+                        createdAt: {
+                            $gte: from ? new Date(`${from}T00:00:00.000Z`) : new Date(0),
+                            ...(to ? { $lte: new Date(`${to}T23:59:59.999Z`) } : {}),
+                        },
+                    })
+                    .sort({ createdAt: -1 })
+                    .exec()
+                : Promise.resolve([]),
+        ]);
+
+        const notesByDate = new Map<string, DailyNoteEntity[]>();
+
+        for (const doc of doneDocs) {
+            if (!doc.doneAt) continue;
+            const date = toDateString(doc.doneAt);
+            if (!boardDates.includes(date)) continue;
+            const arr = notesByDate.get(date) ?? [];
+            arr.push(this.toNoteEntity(doc));
+            notesByDate.set(date, arr);
+        }
+
+        for (const doc of activeDocs) {
+            const date = toDateString(doc.createdAt);
+            if (!boardDates.includes(date)) continue;
+            const arr = notesByDate.get(date) ?? [];
+            arr.push(this.toNoteEntity(doc));
+            notesByDate.set(date, arr);
         }
 
         return boards
             .map((board) => ({
                 board: this.toBoardEntity(board),
-                notes: notesByBoardId.get(board._id.toString()) ?? [],
+                notes: (notesByDate.get(board.date) ?? []).filter((note) =>
+                    this.matchesHistoryFilter(note, filter),
+                ),
             }))
             .filter((entry) => entry.board.focus || entry.notes.length > 0);
+    }
+
+    private dateRangeFilter(date: string) {
+        return {
+            $gte: new Date(`${date}T00:00:00.000Z`),
+            $lte: new Date(`${date}T23:59:59.999Z`),
+        };
     }
 
     private matchesHistoryFilter(note: DailyNoteEntity, filter: DailyHistoryFilter) {
@@ -226,8 +278,6 @@ export class DailyBoardRepositoryAdapter implements DailyBoardRepositoryPort {
     private toNoteEntity(doc: DailyNoteDocument): DailyNoteEntity {
         return {
             id: doc._id.toString(),
-            boardId: doc.boardId,
-            ownerPseudo: doc.ownerPseudo,
             authorPseudo: doc.authorPseudo,
             column: doc.column as DailyNoteEntity['column'],
             title: doc.title,
@@ -236,6 +286,7 @@ export class DailyBoardRepositoryAdapter implements DailyBoardRepositoryPort {
             url: doc.url,
             done: doc.done,
             blockedSince: doc.blockedSince,
+            doingSince: doc.doingSince,
             doneAt: doc.doneAt,
             helpNeeded: doc.helpNeeded,
             unblockAssignedTo: doc.unblockAssignedTo,
@@ -254,4 +305,11 @@ export class DailyBoardRepositoryAdapter implements DailyBoardRepositoryPort {
             editingSectionId: doc.editingSectionId,
         };
     }
+}
+
+function toDateString(date: Date): string {
+    const y = date.getUTCFullYear();
+    const m = `${date.getUTCMonth() + 1}`.padStart(2, '0');
+    const d = `${date.getUTCDate()}`.padStart(2, '0');
+    return `${y}-${m}-${d}`;
 }

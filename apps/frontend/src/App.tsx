@@ -15,8 +15,11 @@ function App() {
             <Route path="/user/daily" element={<UserShell />}>
                 <Route index element={<DailyBoardPage />} />
             </Route>
+            <Route path="/user/stats" element={<UserShell />}>
+                <Route index element={<StatsPage />} />
+            </Route>
             <Route path="/admin" element={<AdminPage />} />
-            <Route path="/stats" element={<StatsPage />} />
+            <Route path="/stats" element={<Navigate to="/user/stats" replace />} />
             <Route path="*" element={<Navigate to="/user" replace />} />
         </Routes>
     );

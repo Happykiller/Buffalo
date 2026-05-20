@@ -33,7 +33,7 @@ function getBadge(r: RequesterStat, rank: number): { label: string; color: strin
         return { label: 'Éternel Espérant', color: '#82b1ff' };
     if (r.totalCount >= 5) return { label: 'Sérialiste Compulsif', color: '#e040fb' };
     if (r.urgentCount >= 1) return { label: 'Maître de la Panique', color: '#ff6d00' };
-    return { label: 'Requêteur Ordinaire', color: '#90a4ae' };
+    return { label: 'Requêteur Ordinaire', color: 'var(--shell-accent)' };
 }
 
 function formatDuration(ms: number): string {
@@ -46,10 +46,10 @@ function formatDuration(ms: number): string {
 }
 
 const criticalities = [
-    { key: 'byLow', label: 'LOW', emoji: '😴', color: '#4caf50', bg: 'rgba(76,175,80,0.15)' },
-    { key: 'byMedium', label: 'MEDIUM', emoji: '🤔', color: '#ff9800', bg: 'rgba(255,152,0,0.15)' },
-    { key: 'byHigh', label: 'HIGH', emoji: '🔥', color: '#ff5722', bg: 'rgba(255,87,34,0.15)' },
-    { key: 'byUrgent', label: 'URGENT', emoji: '🚨', color: '#f44336', bg: 'rgba(244,67,54,0.15)' },
+    { key: 'byLow', label: 'LOW', emoji: '😴', color: '#4caf50' },
+    { key: 'byMedium', label: 'MEDIUM', emoji: '🤔', color: '#ff9800' },
+    { key: 'byHigh', label: 'HIGH', emoji: '🔥', color: '#ff5722' },
+    { key: 'byUrgent', label: 'URGENT', emoji: '🚨', color: '#f44336' },
 ];
 
 export default function StatsPage() {
@@ -60,9 +60,9 @@ export default function StatsPage() {
     const stats = data?.stats;
 
     const pageStyle: React.CSSProperties = {
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #0d0221 0%, #1a0533 30%, #0a1628 60%, #0d1f0a 100%)',
-        color: '#e8e0ff',
+        minHeight: 'calc(100vh - 88px)',
+        background: 'var(--shell-bg)',
+        color: 'var(--shell-text)',
         fontFamily: '"Segoe UI", system-ui, sans-serif',
         padding: '32px 16px 64px',
     };
@@ -77,7 +77,9 @@ export default function StatsPage() {
             <div style={pageStyle}>
                 <div style={{ ...containerStyle, textAlign: 'center', paddingTop: '20vh' }}>
                     <div style={{ fontSize: '64px', marginBottom: '16px' }}>🏆</div>
-                    <p style={{ fontSize: '20px', opacity: 0.7 }}>Compilation des exploits…</p>
+                    <p style={{ fontSize: '20px', color: 'color-mix(in srgb, var(--shell-text) 60%, transparent)' }}>
+                        Compilation des exploits…
+                    </p>
                 </div>
             </div>
         );
@@ -88,7 +90,9 @@ export default function StatsPage() {
             <div style={pageStyle}>
                 <div style={{ ...containerStyle, textAlign: 'center', paddingTop: '20vh' }}>
                     <div style={{ fontSize: '64px', marginBottom: '16px' }}>💀</div>
-                    <p style={{ fontSize: '20px', opacity: 0.7 }}>Les stats dorment. Reviens plus tard.</p>
+                    <p style={{ fontSize: '20px', color: 'color-mix(in srgb, var(--shell-text) 60%, transparent)' }}>
+                        Les stats dorment. Reviens plus tard.
+                    </p>
                 </div>
             </div>
         );
@@ -123,7 +127,7 @@ export default function StatsPage() {
                     }}>
                         Hall of Gloire Absurde
                     </h1>
-                    <p style={{ margin: '8px 0 0', opacity: 0.5, fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase' }}>
+                    <p style={{ margin: '8px 0 0', color: 'color-mix(in srgb, var(--shell-text) 45%, transparent)', fontSize: '14px', letterSpacing: '2px', textTransform: 'uppercase' }}>
                         Bureau des Demandes Absurdes — Tableau de bord officieux
                     </p>
                 </div>
@@ -135,7 +139,7 @@ export default function StatsPage() {
                     gap: '16px',
                     marginBottom: '32px',
                 }}>
-                    <StatCard emoji="📋" label="Total" value={stats.totalRequests} color="#82b1ff" />
+                    <StatCard emoji="📋" label="Total" value={stats.totalRequests} color="var(--shell-accent)" />
                     <StatCard emoji="🔥" label="En attente" value={stats.openRequests} color="#ff6d00" />
                     <StatCard emoji="✅" label="Traitées" value={stats.doneRequests} color="#00e676" />
                     <StatCard emoji="👥" label="Requêteurs" value={stats.totalRequesters} color="#e040fb" />
@@ -149,11 +153,11 @@ export default function StatsPage() {
                     marginBottom: '32px',
                 }}>
                     <div style={cardStyle}>
-                        <div style={{ fontSize: '13px', opacity: 0.6, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        <div style={{ fontSize: '13px', color: 'color-mix(in srgb, var(--shell-text) 55%, transparent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                             Taux de résolution
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <div style={{ flex: 1, height: '12px', borderRadius: '6px', background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                            <div style={{ flex: 1, height: '12px', borderRadius: '6px', background: 'color-mix(in srgb, var(--shell-text) 12%, transparent)', overflow: 'hidden' }}>
                                 <div style={{
                                     height: '100%',
                                     width: `${resolutionRate}%`,
@@ -166,21 +170,21 @@ export default function StatsPage() {
                                 {resolutionRate}%
                             </span>
                         </div>
-                        <div style={{ fontSize: '12px', opacity: 0.4, marginTop: '6px' }}>
+                        <div style={{ fontSize: '12px', color: 'color-mix(in srgb, var(--shell-text) 40%, transparent)', marginTop: '6px' }}>
                             {resolutionRate >= 80 ? '🌟 Bureau efficace !' : resolutionRate >= 50 ? '🤷 Ça avance doucement.' : '😬 Les demandes s\'accumulent…'}
                         </div>
                     </div>
 
                     <div style={cardStyle}>
-                        <div style={{ fontSize: '13px', opacity: 0.6, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        <div style={{ fontSize: '13px', color: 'color-mix(in srgb, var(--shell-text) 55%, transparent)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>
                             Temps de traitement moyen
                         </div>
                         {stats.avgProcessingTimeMs !== null ? (
                             <>
-                                <div style={{ fontSize: '28px', fontWeight: 900, color: '#82b1ff' }}>
+                                <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--shell-accent)' }}>
                                     ⏱️ {formatDuration(stats.avgProcessingTimeMs)}
                                 </div>
-                                <div style={{ fontSize: '12px', opacity: 0.4, marginTop: '6px' }}>
+                                <div style={{ fontSize: '12px', color: 'color-mix(in srgb, var(--shell-text) 40%, transparent)', marginTop: '6px' }}>
                                     {stats.avgProcessingTimeMs < 3600000
                                         ? '🚀 On assure !'
                                         : stats.avgProcessingTimeMs < 86400000
@@ -189,7 +193,7 @@ export default function StatsPage() {
                                 </div>
                             </>
                         ) : (
-                            <div style={{ fontSize: '20px', opacity: 0.4 }}>Aucune demande traitée</div>
+                            <div style={{ fontSize: '20px', color: 'color-mix(in srgb, var(--shell-text) 40%, transparent)' }}>Aucune demande traitée</div>
                         )}
                     </div>
                 </div>
@@ -208,7 +212,7 @@ export default function StatsPage() {
                                         width: '72px', fontSize: '11px', fontWeight: 700,
                                         letterSpacing: '1px', color, textTransform: 'uppercase',
                                     }}>{label}</span>
-                                    <div style={{ flex: 1, height: '10px', borderRadius: '5px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                                    <div style={{ flex: 1, height: '10px', borderRadius: '5px', background: 'color-mix(in srgb, var(--shell-text) 10%, transparent)', overflow: 'hidden' }}>
                                         <div style={{
                                             height: '100%',
                                             width: `${pct}%`,
@@ -229,7 +233,6 @@ export default function StatsPage() {
                     <div style={cardStyle}>
                         <h2 style={sectionTitle}>🏅 Classement des Requêteurs</h2>
 
-                        {/* Podium top 3 — ordre visuel : 2e à gauche, 1er au centre, 3e à droite */}
                         {top3.length > 0 && (() => {
                             const slots = [
                                 { entry: top3[1], rank: 1, height: 120, bar: 'linear-gradient(180deg, #b0bec5, #78909c)' },
@@ -254,7 +257,6 @@ export default function StatsPage() {
                                                 flexDirection: 'column',
                                                 alignItems: 'center',
                                             }}>
-                                                {/* Info section — hauteur fixe pour que flex-end aligne les barres */}
                                                 <div style={{
                                                     minHeight: '110px',
                                                     display: 'flex',
@@ -272,6 +274,7 @@ export default function StatsPage() {
                                                         maxWidth: '110px',
                                                         wordBreak: 'break-word',
                                                         lineHeight: 1.2,
+                                                        color: 'var(--shell-text)',
                                                     }}>
                                                         {entry.userDisplayName}
                                                     </div>
@@ -289,7 +292,6 @@ export default function StatsPage() {
                                                         {badge.label}
                                                     </div>
                                                 </div>
-                                                {/* Barre — hauteur variable, ancrée en bas */}
                                                 <div style={{
                                                     width: '80px',
                                                     height: `${height}px`,
@@ -301,7 +303,7 @@ export default function StatsPage() {
                                                     fontSize: '22px',
                                                     fontWeight: 900,
                                                     color: '#fff',
-                                                    boxShadow: rank === 0 ? '0 -6px 24px #ffd70055' : '0 -4px 12px rgba(255,255,255,0.1)',
+                                                    boxShadow: rank === 0 ? '0 -6px 24px #ffd70055' : '0 -4px 12px rgba(0,0,0,0.15)',
                                                 }}>
                                                     {entry.totalCount}
                                                 </div>
@@ -325,13 +327,13 @@ export default function StatsPage() {
                                             gap: '12px',
                                             padding: '10px 12px',
                                             borderRadius: '8px',
-                                            background: 'rgba(255,255,255,0.04)',
-                                            border: '1px solid rgba(255,255,255,0.08)',
+                                            background: 'color-mix(in srgb, var(--shell-surface) 8%, transparent)',
+                                            border: '1px solid var(--shell-border)',
                                         }}>
-                                            <span style={{ width: '24px', opacity: 0.5, fontWeight: 700, fontSize: '14px', textAlign: 'center' }}>
+                                            <span style={{ width: '24px', color: 'color-mix(in srgb, var(--shell-text) 45%, transparent)', fontWeight: 700, fontSize: '14px', textAlign: 'center' }}>
                                                 #{rank + 1}
                                             </span>
-                                            <span style={{ flex: 1, fontWeight: 600, fontSize: '14px' }}>{r.userDisplayName}</span>
+                                            <span style={{ flex: 1, fontWeight: 600, fontSize: '14px', color: 'var(--shell-text)' }}>{r.userDisplayName}</span>
                                             <span style={{
                                                 fontSize: '10px',
                                                 color: badge.color,
@@ -344,7 +346,7 @@ export default function StatsPage() {
                                             }}>
                                                 {badge.label}
                                             </span>
-                                            <span style={{ fontWeight: 700, fontSize: '16px', minWidth: '28px', textAlign: 'right', opacity: 0.8 }}>
+                                            <span style={{ fontWeight: 700, fontSize: '16px', minWidth: '28px', textAlign: 'right', color: 'color-mix(in srgb, var(--shell-text) 75%, transparent)' }}>
                                                 {r.totalCount}
                                             </span>
                                         </div>
@@ -355,11 +357,9 @@ export default function StatsPage() {
                     </div>
                 )}
 
-                {/* Footer links */}
-                <div style={{ textAlign: 'center', marginTop: '48px', opacity: 0.4, fontSize: '13px', display: 'flex', gap: '24px', justifyContent: 'center' }}>
-                    <a href="/user" style={{ color: 'inherit', textDecoration: 'none' }}>← Faire une demande</a>
-                    <span>·</span>
-                    <span>Mis à jour toutes les 30s</span>
+                {/* Footer */}
+                <div style={{ textAlign: 'center', marginTop: '48px', color: 'color-mix(in srgb, var(--shell-text) 40%, transparent)', fontSize: '13px' }}>
+                    Mis à jour toutes les 30s
                 </div>
             </div>
         </div>
@@ -367,8 +367,8 @@ export default function StatsPage() {
 }
 
 const cardStyle: React.CSSProperties = {
-    background: 'rgba(255,255,255,0.05)',
-    border: '1px solid rgba(255,255,255,0.1)',
+    background: 'color-mix(in srgb, var(--shell-surface, #ffffff) 20%, transparent)',
+    border: '1px solid var(--shell-border, rgba(255,255,255,0.1))',
     borderRadius: '12px',
     padding: '20px',
     backdropFilter: 'blur(10px)',
@@ -379,6 +379,7 @@ const sectionTitle: React.CSSProperties = {
     fontSize: '16px',
     fontWeight: 700,
     letterSpacing: '0.5px',
+    color: 'var(--shell-text)',
 };
 
 function StatCard({ emoji, label, value, color }: { emoji: string; label: string; value: number; color: string }) {
@@ -386,12 +387,12 @@ function StatCard({ emoji, label, value, color }: { emoji: string; label: string
         <div style={{
             ...cardStyle,
             textAlign: 'center',
-            borderColor: `${color}33`,
-            boxShadow: `0 0 20px ${color}11`,
+            borderColor: `color-mix(in srgb, ${color} 35%, var(--shell-border, rgba(255,255,255,0.1)))`,
+            boxShadow: `0 0 20px color-mix(in srgb, ${color} 12%, transparent)`,
         }}>
             <div style={{ fontSize: '28px', marginBottom: '4px' }}>{emoji}</div>
             <div style={{ fontSize: '36px', fontWeight: 900, color, lineHeight: 1 }}>{value}</div>
-            <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</div>
+            <div style={{ fontSize: '12px', color: 'color-mix(in srgb, var(--shell-text) 55%, transparent)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>{label}</div>
         </div>
     );
 }

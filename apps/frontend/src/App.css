@@ -450,6 +450,44 @@ select {
   gap: 12px;
 }
 
+.person-row__header {
+  justify-content: space-between;
+}
+
+.hide-person-button {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--shell-border, #d1d5db);
+  border-radius: 6px;
+  background: transparent;
+  color: color-mix(in srgb, var(--shell-text, #6b7280) 55%, transparent);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.hide-person-button:hover {
+  background: color-mix(in srgb, var(--shell-text, #111827) 8%, transparent);
+  color: var(--shell-text, #111827);
+  border-color: color-mix(in srgb, var(--shell-text, #111827) 35%, transparent);
+}
+
+.hidden-people-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px dashed var(--shell-border, #d1d5db);
+  color: color-mix(in srgb, var(--shell-text, #6b7280) 60%, transparent);
+  font-size: 13px;
+}
+
 .person-row__identity > div {
   display: flex;
   flex-direction: column;
@@ -801,16 +839,23 @@ select {
   gap: 14px;
 }
 
+/* ========================================
+   Summary Overlay — mode projection
+   Fond fixe, indépendant du thème aléatoire,
+   optimisé pour la lisibilité à distance.
+   ======================================== */
+
 .summary-overlay {
   position: fixed;
   inset: 0;
-  padding: 24px 28px 28px 28px;
+  padding: 20px 24px 24px;
   z-index: 110;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
-  gap: 14px;
+  gap: 12px;
   overflow: hidden;
-  background: var(--shell-bg, #f3f4f6);
+  background: #0d1117;
+  color: #e8eaf0;
   border: 0;
   border-radius: 0;
   box-shadow: none;
@@ -827,11 +872,13 @@ select {
   min-width: 0;
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: 16px;
 }
 
 .summary-overlay__headline h2 {
   flex: 0 0 auto;
+  font-size: 22px;
+  color: #ffffff;
 }
 
 .summary-overlay__header p {
@@ -840,30 +887,40 @@ select {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: color-mix(in srgb, var(--shell-text, #6b7280) 58%, white);
+  font-size: 15px;
+  color: rgba(232, 234, 240, 0.55);
+}
+
+.summary-overlay .ghost-button {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: #e8eaf0;
 }
 
 .summary-grid {
   display: grid;
-  grid-template-columns: minmax(74px, 0.42fr) repeat(5, minmax(130px, 1fr));
+  grid-template-columns: minmax(90px, 0.46fr) repeat(5, minmax(150px, 1fr));
   gap: 8px;
 }
 
 .summary-grid--header {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  color: color-mix(in srgb, var(--shell-text, #6b7280) 58%, white);
+  color: rgba(232, 234, 240, 0.45);
   text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .summary-grid-body {
   min-height: 0;
   display: grid;
-  grid-auto-rows: minmax(92px, auto);
+  grid-auto-rows: minmax(108px, auto);
   align-content: start;
   gap: 8px;
   overflow: auto;
-  padding-right: 4px;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
 }
 
 .summary-grid-body .summary-grid {
@@ -873,27 +930,32 @@ select {
 .summary-person-cell,
 .summary-list {
   min-width: 0;
-  min-height: 92px;
-  border: 1px solid color-mix(in srgb, var(--shell-border, #d1d5db) 75%, transparent);
+  min-height: 108px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--shell-surface, #f9fafb) 88%, white);
+  background: rgba(255, 255, 255, 0.04);
   padding: 8px;
 }
 
 .summary-person-cell {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 6px 8px;
+  gap: 8px;
+  padding: 8px;
   background: transparent;
   border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .summary-person-cell strong {
   width: 100%;
   text-align: center;
-  font-size: 12px;
-  line-height: 1.2;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -901,10 +963,32 @@ select {
   -webkit-box-orient: vertical;
 }
 
+.summary-hide-button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.summary-hide-button:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
 .summary-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 132px), 1fr));
-  grid-auto-rows: minmax(30px, auto);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  grid-auto-rows: minmax(36px, auto);
   gap: 5px;
   align-content: start;
   overflow-x: hidden;
@@ -912,15 +996,16 @@ select {
 }
 
 .summary-list--danger {
-  border-color: color-mix(in srgb, #dc2626 22%, var(--shell-border, #d1d5db));
-  background: color-mix(in srgb, #dc2626 6%, var(--shell-surface, #fff8f8));
+  border-color: rgba(220, 38, 38, 0.35);
+  background: rgba(220, 38, 38, 0.08);
 }
 
 .summary-list--empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: color-mix(in srgb, var(--shell-text, #6b7280) 50%, white);
+  color: rgba(232, 234, 240, 0.28);
+  font-size: 18px;
 }
 
 .summary-task {
@@ -928,44 +1013,54 @@ select {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  font-size: 11px;
-  line-height: 1.25;
-  padding: 6px 7px 6px 9px;
-  border: 1px solid transparent;
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--shell-surface, #ffffff) 94%, white);
+  font-size: 13px;
+  line-height: 1.3;
+  padding: 7px 8px 7px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #e8eaf0;
   overflow: hidden;
   overflow-wrap: anywhere;
   word-break: normal;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
 }
 
 .summary-task::before {
   content: '';
   position: absolute;
-  inset: 6px auto 6px 0;
+  inset: 7px auto 7px 0;
   width: 3px;
   border-radius: 999px;
   background: transparent;
 }
 
 .summary-task--warning {
-  border-color: color-mix(in srgb, #f59e0b 38%, var(--shell-border, #e5e7eb));
+  border-color: rgba(245, 158, 11, 0.45);
+  background: rgba(245, 158, 11, 0.08);
 }
 
 .summary-task--warning::before {
   background: #f59e0b;
 }
 
-.summary-task--alert,
-.summary-task--blocker {
-  border-color: color-mix(in srgb, #dc2626 42%, var(--shell-border, #e5e7eb));
+.summary-task--alert {
+  border-color: rgba(220, 38, 38, 0.5);
+  background: rgba(220, 38, 38, 0.1);
 }
 
-.summary-task--alert::before,
+.summary-task--alert::before {
+  background: #dc2626;
+}
+
+.summary-task--blocker {
+  border-color: rgba(220, 38, 38, 0.5);
+  background: rgba(220, 38, 38, 0.1);
+}
+
 .summary-task--blocker::before {
   background: #dc2626;
 }
@@ -1945,11 +2040,19 @@ select {
 
 @media (max-width: 1200px) {
   .summary-overlay {
-    padding: 18px;
+    padding: 16px;
   }
 
   .summary-grid {
-    grid-template-columns: minmax(64px, 0.34fr) repeat(5, minmax(116px, 1fr));
+    grid-template-columns: minmax(76px, 0.38fr) repeat(5, minmax(120px, 1fr));
+  }
+
+  .summary-task {
+    font-size: 12px;
+  }
+
+  .summary-person-cell strong {
+    font-size: 13px;
   }
 
   .summary-list {
