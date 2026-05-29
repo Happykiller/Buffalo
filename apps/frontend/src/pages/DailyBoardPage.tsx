@@ -15,14 +15,14 @@ import {
     DAILY_PRESENCE_CHANGED_SUBSCRIPTION,
 } from '../graphql/subscriptions';
 import type { UserShellContext } from '../types/user-shell-context';
+import TaskCard from '../components/TaskCard';
 
-type TaskColumn = 'TODO' | 'DOING' | 'BLOCKED' | 'DONE';
+export type TaskColumn = 'TODO' | 'DOING' | 'BLOCKED' | 'DONE';
 type CreateColumn = TaskColumn | 'DONE_YESTERDAY';
 type PersonStatus = 'ONLINE' | 'ABSENT' | 'EDITING';
 
-interface DailyTask {
+export interface DailyTask {
     id: string;
-    authorPseudo: string;
     authorPseudo: string;
     column: TaskColumn;
     title: string;
@@ -165,7 +165,6 @@ export default function DailyBoardPage() {
                 input: {
                     boardDate: BOARD_DATE,
                     authorPseudo: values.authorPseudo,
-                    authorPseudo: user.displayName,
                     column: createModal.column === 'DONE_YESTERDAY' ? 'DONE' : createModal.column,
                     title: values.title,
                     createdAt: createModal.column === 'DONE_YESTERDAY' ? toYesterdayIso() : null,
@@ -273,37 +272,6 @@ export default function DailyBoardPage() {
                 />
             </section>
 
-            <section className="blockers-panel">
-                <div className="blockers-panel__header">
-                    <div>
-                        <h2>Blocages actifs</h2>
-                        <p>Les points rouges restent visibles en haut pendant le daily.</p>
-                    </div>
-                </div>
-                <div className="blockers-list">
-                    {board.blockers.length === 0 && <div className="empty-inline">Aucun blocage actif.</div>}
-                    {board.blockers.map((task) => (
-                        <div key={task.id} className="blocker-row">
-                            <div>
-                                <strong>{task.title}</strong>
-                                <div className="blocker-meta">
-                                    <span>{task.blockedSince ? `depuis ${formatRelativeTime(task.blockedSince)}` : 'bloqué maintenant'}</span>
-                                    {task.helpNeeded && <span>{task.helpNeeded}</span>}
-                                    {task.url && <a href={task.url} target="_blank" rel="noreferrer">Lien</a>}
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                className="danger-ghost-button"
-                                onClick={() => void handleDropOnColumn(task.authorPseudo, 'DOING')}
-                                disabled={task.authorPseudo !== user.displayName}
-                            >
-                                Déplacer en cours
-                            </button>
-                        </div>
-                    ))}
-                </div>
-            </section>
 
             <section className="people-board">
                 {hiddenPseudos.size > 0 && (
@@ -520,100 +488,7 @@ export default function DailyBoardPage() {
     );
 }
 
-function TaskCard(props: {
-    task: DailyTask;
-    labels: string[];
-    isHistorical?: boolean;
-    isEditing: boolean;
-    editingTitleValue: string;
-    canEdit: boolean;
-    onDragStart: (task: DailyTask | null) => void;
-    onDragEnd: () => void;
-    onTitleEditStart: () => void;
-    onTitleEditChange: (value: string) => void;
-    onTitleEditSave: () => void;
-    onTitleEditCancel: () => void;
-    onUpdate: (input: Record<string, unknown>) => Promise<void>;
-    onDelete: () => void;
-}) {
-    const [menuOpen, setMenuOpen] = useState(false);
-    const ageState = getTaskAgeState(props.task);
 
-    return (
-        <div
-            className={`task-card${props.task.column === 'BLOCKED' ? ' task-card--blocker' : ''}${ageState ? ` task-card--${ageState}` : ''}`}
-            draggable={props.canEdit && !props.isHistorical}
-            onDragStart={() => {
-                if (props.canEdit && !props.isHistorical) {
-                    props.onDragStart(props.task);
-                }
-            }}
-            onDragEnd={props.onDragEnd}
-        >
-            <div className="task-card__top">
-                {!props.isHistorical && props.canEdit && (
-                    <span className="task-card__drag-grip" title="Glisser-déposer" aria-hidden="true">
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                    </span>
-                )}
-                {props.isEditing ? (
-                    <input
-                        className="task-card__title-input"
-                        value={props.editingTitleValue}
-                        autoFocus
-                        onChange={(event) => props.onTitleEditChange(event.target.value)}
-                        onBlur={props.onTitleEditSave}
-                        onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
-                                event.preventDefault();
-                                props.onTitleEditSave();
-                            }
-                            if (event.key === 'Escape') {
-                                props.onTitleEditCancel();
-                            }
-                        }}
-                    />
-                ) : (
-                    <button type="button" className="task-card__title" onClick={props.canEdit ? props.onTitleEditStart : undefined}>{props.task.title}</button>
-                )}
-                {props.canEdit && (
-                    <button type="button" className="task-menu-button" onClick={() => setMenuOpen((value) => !value)}>···</button>
-                )}
-            </div>
-
-            <div className="task-card__meta">
-                {props.task.url && <a href={props.task.url} target="_blank" rel="noreferrer">Lien</a>}
-            </div>
-            {props.task.description && <p className="task-card__description">{props.task.description}</p>}
-            <div className="task-card__footer">
-                <div className="task-card__footer-left">
-                    {props.task.label && <span className="task-chip">{props.task.label}</span>}
-                </div>
-                <div className="task-card__info">
-                    <button type="button" className="task-card__info-button" aria-label="Informations de la tâche">
-                        i
-                    </button>
-                    <div className="task-card__tooltip">
-                        <span>Créée {formatMiniDate(props.task.createdAt)}</span>
-                        <span>Modifiée {formatMiniDate(props.task.updatedAt)}</span>
-                        {props.task.doneAt && <span>Finie {formatMiniDate(props.task.doneAt)}</span>}
-                    </div>
-                </div>
-            </div>
-
-            {props.canEdit && menuOpen && (
-                <div className="task-menu">
-                    <button type="button" className="task-menu__danger" onClick={props.onDelete}>Supprimer</button>
-                </div>
-            )}
-        </div>
-    );
-}
 
 function CreateTaskModal(props: {
     labels: string[];
@@ -761,7 +636,7 @@ function formatRelativeTime(date: string | undefined) {
     if (deltaSeconds < 60) return `il y a ${deltaSeconds}s`;
     return `il y a ${Math.floor(deltaSeconds / 60)} min`;
 }
-function formatMiniDate(date: string) {
+export function formatMiniDate(date: string) {
     return new Date(date).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 function toYesterdayIso() {
@@ -770,7 +645,7 @@ function toYesterdayIso() {
     return date.toISOString();
 }
 
-function getTaskAgeState(task: DailyTask): 'warning' | 'alert' | null {
+export function getTaskAgeState(task: DailyTask): 'warning' | 'alert' | null {
     if (task.column !== 'TODO' && task.column !== 'DOING') {
         return null;
     }

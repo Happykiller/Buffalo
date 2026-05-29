@@ -7,9 +7,6 @@ export class CreateDailyNoteInput {
     boardDate?: string;
 
     @Field()
-    ownerPseudo!: string;
-
-    @Field()
     authorPseudo!: string;
 
     @Field(() => DailyNoteColumn)

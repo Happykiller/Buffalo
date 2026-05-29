@@ -3,9 +3,6 @@ import { DailyNoteColumn } from './daily-note-column.enum';
 
 @InputType()
 export class UpdateDailyNoteInput {
-    @Field(() => String, { nullable: true })
-    ownerPseudo?: string;
-
     @Field(() => DailyNoteColumn, { nullable: true })
     column?: DailyNoteColumn;
 

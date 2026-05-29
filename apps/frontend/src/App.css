@@ -696,6 +696,112 @@ select {
   line-height: 1.5;
 }
 
+.task-card__description--editable {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  transition: background-color 0.2s;
+}
+
+.task-card__description--editable:hover {
+  background: color-mix(in srgb, var(--shell-surface, #f3f4f6) 60%, transparent);
+}
+
+.task-card__placeholder {
+  color: color-mix(in srgb, var(--shell-text, #9ca3af) 70%, transparent);
+  font-size: 12px;
+  font-style: italic;
+}
+
+.task-card__description-input {
+  width: 100%;
+  border: 1px solid var(--shell-border, #d1d5db);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  background: color-mix(in srgb, var(--shell-input-bg, #ffffff) 92%, white);
+  color: var(--shell-text, #111827);
+  resize: vertical;
+}
+
+.task-card__url-input,
+.task-card__label-input {
+  width: 100%;
+  border: 1px solid var(--shell-border, #d1d5db);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 12px;
+  background: color-mix(in srgb, var(--shell-input-bg, #ffffff) 92%, white);
+  color: var(--shell-text, #111827);
+}
+
+.task-card__url-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-card__edit-link-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  color: color-mix(in srgb, var(--shell-text, #6b7280) 50%, white);
+  padding: 2px;
+  line-height: 1;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.task-card__url-container:hover .task-card__edit-link-button {
+  opacity: 1;
+}
+
+.task-card__add-link-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  color: color-mix(in srgb, var(--shell-text, #9ca3af) 70%, transparent);
+  font-style: italic;
+  padding: 0;
+  text-decoration: none;
+}
+
+.task-card__add-link-button:hover {
+  text-decoration: underline;
+  color: var(--shell-text, #111827);
+}
+
+.task-chip--editable {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.task-chip--editable:hover {
+  opacity: 0.8;
+}
+
+.task-chip--add {
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, var(--shell-border, #d1d5db) 60%, transparent);
+  color: color-mix(in srgb, var(--shell-text, #9ca3af) 70%, transparent);
+  cursor: pointer;
+  font-style: italic;
+}
+
+.task-chip--add:hover {
+  border-color: var(--shell-border, #9ca3af);
+  color: var(--shell-text, #111827);
+  background: color-mix(in srgb, var(--shell-surface, #f3f4f6) 30%, transparent);
+}
+
+.task-card__label-editor {
+  max-width: 120px;
+}
+
 .task-card__footer {
   display: flex;
   align-items: flex-end;

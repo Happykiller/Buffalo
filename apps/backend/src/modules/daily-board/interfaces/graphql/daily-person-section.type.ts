@@ -20,7 +20,7 @@ export class DailyPersonSectionType {
     status!: DailyPersonStatus;
 
     @Field(() => [DailyNoteType])
-    doneYesterday!: DailyNoteType[];
+    donePreviously!: DailyNoteType[];
 
     @Field(() => [DailyNoteType])
     todo!: DailyNoteType[];

@@ -57,21 +57,21 @@ export class DailyBoardResolver {
         @Args('input') input: UpdateDailyNoteInput,
     ) {
         const note = await this.dailyBoardService.updateNote(noteId, input);
-        await this.publishBoardUpdate(null, 'note.updated', note.ownerPseudo, note.id);
+        await this.publishBoardUpdate(null, 'note.updated', note.authorPseudo, note.id);
         return note;
     }
 
     @Mutation(() => DailyNoteType)
     async deleteDailyNote(@Args('noteId') noteId: string) {
         const note = await this.dailyBoardService.deleteNote(noteId);
-        await this.publishBoardUpdate(null, 'note.deleted', note.ownerPseudo, note.id);
+        await this.publishBoardUpdate(null, 'note.deleted', note.authorPseudo, note.id);
         return note;
     }
 
     @Mutation(() => DailyNoteType)
     async restoreDailyNote(@Args('noteId') noteId: string) {
         const note = await this.dailyBoardService.restoreNote(noteId);
-        await this.publishBoardUpdate(null, 'note.restored', note.ownerPseudo, note.id);
+        await this.publishBoardUpdate(null, 'note.restored', note.authorPseudo, note.id);
         return note;
     }
 
@@ -94,7 +94,7 @@ export class DailyBoardResolver {
             unblockAssignedTo: null,
             done: false,
         });
-        await this.publishBoardUpdate(null, 'blocker.resolved', note.ownerPseudo, note.id);
+        await this.publishBoardUpdate(null, 'blocker.resolved', note.authorPseudo, note.id);
         return note;
     }
 
