@@ -1,9 +1,5 @@
 {
   "mcpServers": {
-    "github": {
-      "type": "http",
-      "url": "https://api.githubcopilot.com/mcp/"
-    },
     "mongodb": {
       "type": "stdio",
       "command": "npx",
