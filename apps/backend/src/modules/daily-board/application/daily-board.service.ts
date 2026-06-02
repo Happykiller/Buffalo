@@ -29,7 +29,7 @@ export class DailyBoardService {
         const [notes, presence, previouslyDoneNotes] = await Promise.all([
             this.repository.listNotes(boardDate),
             this.repository.listPresence(board.id, new Date(Date.now() - 2 * 60 * 1000)),
-            this.repository.listRecentlyDoneNotes(boardDate, 3),
+            this.repository.listRecentlyDoneNotes(boardDate, 7),
         ]);
 
         return {

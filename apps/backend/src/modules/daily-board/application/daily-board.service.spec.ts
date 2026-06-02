@@ -68,18 +68,20 @@ class FakeDailyBoardRepository implements DailyBoardRepositoryPort {
         });
     }
 
-    async listRecentlyDoneNotes(beforeDate: string, limit: number): Promise<DailyNoteEntity[]> {
+    async listRecentlyDoneNotes(beforeDate: string, daysBack: number): Promise<DailyNoteEntity[]> {
         const before = new Date(`${beforeDate}T00:00:00.000Z`);
+        const after = new Date(before);
+        after.setDate(after.getDate() - daysBack);
         return this.notes
             .filter(
                 (note) =>
                     note.deletedAt === null &&
                     note.column === 'DONE' &&
                     note.doneAt !== null &&
+                    note.doneAt >= after &&
                     note.doneAt < before,
             )
-            .sort((a, b) => b.doneAt!.getTime() - a.doneAt!.getTime())
-            .slice(0, limit);
+            .sort((a, b) => b.doneAt!.getTime() - a.doneAt!.getTime());
     }
 
     async findNoteById(id: string): Promise<DailyNoteEntity | null> {

@@ -74,7 +74,7 @@ export interface DailyBoardRepositoryPort {
     getOrCreateBoard(date: string): Promise<DailyBoardEntity>;
     updateBoardFocus(date: string, focus: string): Promise<DailyBoardEntity>;
     listNotes(date: string): Promise<DailyNoteEntity[]>;
-    listRecentlyDoneNotes(beforeDate: string, limit: number): Promise<DailyNoteEntity[]>;
+    listRecentlyDoneNotes(beforeDate: string, daysBack: number): Promise<DailyNoteEntity[]>;
     findNoteById(id: string): Promise<DailyNoteEntity | null>;
     createNote(data: CreateDailyNoteData): Promise<DailyNoteEntity>;
     updateNote(id: string, patch: UpdateDailyNoteData): Promise<DailyNoteEntity | null>;

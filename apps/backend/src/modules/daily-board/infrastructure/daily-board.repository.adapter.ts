@@ -74,11 +74,13 @@ export class DailyBoardRepositoryAdapter implements DailyBoardRepositoryPort {
         return [...activeDocs, ...doneDocs].map((doc) => this.toNoteEntity(doc));
     }
 
-    async listRecentlyDoneNotes(beforeDate: string, limit: number): Promise<DailyNoteEntity[]> {
+    async listRecentlyDoneNotes(beforeDate: string, daysBack: number): Promise<DailyNoteEntity[]> {
+        const before = new Date(`${beforeDate}T00:00:00.000Z`);
+        const after = new Date(before);
+        after.setDate(after.getDate() - daysBack);
         const docs = await this.noteModel
-            .find({ deletedAt: null, column: 'DONE', doneAt: { $lt: new Date(`${beforeDate}T00:00:00.000Z`) } })
+            .find({ deletedAt: null, column: 'DONE', doneAt: { $gte: after, $lt: before } })
             .sort({ doneAt: -1 })
-            .limit(limit)
             .exec();
         return docs.map((doc) => this.toNoteEntity(doc));
     }

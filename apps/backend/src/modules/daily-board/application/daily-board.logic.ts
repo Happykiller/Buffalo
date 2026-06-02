@@ -123,7 +123,7 @@ export function buildPersonSections(
                     [DailyNoteColumn.BLOCKED]: sectionNotes.filter((note) => note.column === DailyNoteColumn.BLOCKED),
                     [DailyNoteColumn.DONE]: sectionNotes.filter((note) => note.column === DailyNoteColumn.DONE),
                 },
-                donePreviously: previouslyDoneNotes.filter((note) => note.authorPseudo === pseudo),
+                donePreviously: previouslyDoneNotes.filter((note) => note.authorPseudo === pseudo).slice(0, 3),
             };
         });
 
